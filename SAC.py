@@ -1,9 +1,9 @@
 from vacuum import VacuumEnv
-from policyNetwork import PolicyNetwork
+from network import PolicyNetwork
 from utilities import ReplayBuffer
 
-env = VacuumEnv(10)
-pol = PolicyNetwork(env.observation_space,env.action_space).act #Callable: State -> Int
+env = VacuumEnv(5)
+pol = PolicyNetwork(env.observation_space.shape[0],env.action_space.n).act #Callable: State -> Int
 replay = ReplayBuffer(10)
 
 done = False

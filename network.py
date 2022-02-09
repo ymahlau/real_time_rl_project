@@ -7,24 +7,22 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.distributions import Categorical
 
-class PolicyNetwork(nn.Module):
+class Network(nn.Module):
     """Define policy network"""
 
-    def __init__(self, observation_space, action_space, hidden_size=128, num_hidden = 1):
+    def __init__(self, input_size, output_size, hidden_size=128, num_hidden = 1):
         super().__init__()
         
         if num_hidden < 1:
             raise ValueError("num_hidden must be greater or equal to 1 and not {num_hidden}")
         if hidden_size < 1:
             raise ValueError("hidden_size must be greater or equal to 1 and not {hidden_size}")
-        if not isinstance(action_space,spaces.Discrete):
-            raise ValueError("Action space needs to be discrete")
 
         self.num_hidden = num_hidden
         self.hidden_size = hidden_size
         
-        self.input = nn.Linear(np.asscalar(np.prod(observation_space.shape)), hidden_size)
-        self.output = nn.Linear(hidden_size,action_space.n)
+        self.input = nn.Linear(input_size, hidden_size)
+        self.output = nn.Linear(hidden_size,output_size)
         
         additional_hidden_layers = []
         for _ in range(num_hidden -1):      
@@ -39,14 +37,23 @@ class PolicyNetwork(nn.Module):
         if self.num_hidden > 1:
             x = self.additional_hidden_layers(x)
         x = self.output(x)
-        x = F.softmax(x)
         return x
+
+        
+class PolicyNetwork(Network):
+    
+    def __init__(self, input_size, nom_actions, hidden_size = 128, num_hidden = 1):
+        super().__init__(input_size,nom_actions,hidden_size = hidden_size, num_hidden = num_hidden)
+        
+    def get_action_distribution(self,state):
+        return F.softmax(self.forward(state))
     
     def act(self,state,return_distribution = False):
-        act_distr = Categorical(self.forward(state))
+        act_distr = Categorical(self.get_action_distribution(state))
         chosen_action = act_distr.sample().item()
         if return_distribution:
             return chosen_action,act_distr
         else:
             return chosen_action
+        
         
