@@ -42,8 +42,11 @@ class PolicyNetwork(nn.Module):
         x = F.softmax(x)
         return x
     
-    def act(self,state):
+    def act(self,state,return_distribution = False):
         act_distr = Categorical(self.forward(state))
         chosen_action = act_distr.sample().item()
-        return chosen_action
+        if return_distribution:
+            return chosen_action,act_distr
+        else:
+            return chosen_action
         

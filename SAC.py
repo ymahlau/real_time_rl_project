@@ -9,9 +9,9 @@ replay = ReplayBuffer(10)
 done = False
 state = env.reset()
 while not done:
-    action = pol(state)
+    action,distr = pol(state,return_distribution = True)
     next_state,reward,done,_ = env.step(action)
-    replay.add_data( (state,action,reward,next_state,done) )
+    replay.add_data( (state,action,distr,reward,next_state,done) )
     state = next_state
     
     #Retrieve samples like this
