@@ -60,10 +60,6 @@ class PolicyNetwork(Network):
         
 class ValueNetwork(Network):
     
-    #Actions encoded as 1-hot
-    
-    #Forward: state,action -> value
-    
     def __init__(self, obs_size, hidden_size = 128, num_hidden = 1):
         super().__init__(obs_size,1,hidden_size = hidden_size, num_hidden = num_hidden)    
         
