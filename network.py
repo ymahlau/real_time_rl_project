@@ -6,6 +6,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.distributions import Categorical
+import typing
+from rtmdp import RTMDP
 
 class Network(nn.Module):
     """Define policy network"""
@@ -42,8 +44,8 @@ class Network(nn.Module):
         
 class PolicyNetwork(Network):
     
-    def __init__(self, input_size, nom_actions, hidden_size = 128, num_hidden = 1):
-        super().__init__(input_size,nom_actions,hidden_size = hidden_size, num_hidden = num_hidden)
+    def __init__(self, obs_size, nom_actions, hidden_size = 128, num_hidden = 1):
+        super().__init__(obs_size,nom_actions,hidden_size = hidden_size, num_hidden = num_hidden)
         
     def get_action_distribution(self,state):
         return F.softmax(self.forward(state))
@@ -56,4 +58,12 @@ class PolicyNetwork(Network):
         else:
             return chosen_action
         
+class ValueNetwork(Network):
+    
+    #Actions encoded as 1-hot
+    
+    #Forward: state,action -> value
+    
+    def __init__(self, obs_size, hidden_size = 128, num_hidden = 1):
+        super().__init__(obs_size,1,hidden_size = hidden_size, num_hidden = num_hidden)    
         
