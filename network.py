@@ -8,7 +8,7 @@ import torch.optim as optim
 from torch.distributions import Categorical
 
 class Network(nn.Module):
-    """Define policy network"""
+    """Neural network with variable dimensions"""
 
     def __init__(self, input_size, output_size, hidden_size=128, num_hidden = 1):
         super().__init__()
