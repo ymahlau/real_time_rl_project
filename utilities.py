@@ -1,5 +1,7 @@
 import random
 from collections import deque
+import gym
+import numpy as np
 
 class ReplayBuffer:
     
@@ -14,4 +16,27 @@ class ReplayBuffer:
     
     def sample(self, sample_size):
         return random.sample(self.replay_buffer, sample_size)
+   
+"""
+Converts the observation tuple (s,a) returned by rtmdp's
+into a single sequence s + one_hot_encoding(a)
+"""
+def flatten_rtmdp_obs(obs,num_actions):
+    #one-hot
+    one_hot = np.zeros(num_actions)
+    one_hot[obs[1]] = 1
+    return list(obs[0]) + list(one_hot)
 
+def evaluate_policy(policy,env):
+    
+    N = 10
+    cum_rew = 0
+    for _ in range(N):
+        state = env.reset()
+        done = False
+        while not done:
+            state = flatten_rtmdp_obs(state,env.action_space.n)
+            action = policy(state)
+            state,reward,done,_ = env.step(action)
+            cum_rew += reward
+    print("Policy gathered a average reward of {0} in {1} trials.".format(cum_rew / N,N))

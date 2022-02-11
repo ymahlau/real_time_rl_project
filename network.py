@@ -12,7 +12,7 @@ from rtmdp import RTMDP
 class Network(nn.Module):
     """Neural network with variable dimensions"""
 
-    def __init__(self, input_size, output_size, hidden_size=128, num_hidden = 1):
+    def __init__(self, input_size, output_size, hidden_size=256, num_hidden = 2):
         super().__init__()
         
         if num_hidden < 1:
@@ -28,12 +28,14 @@ class Network(nn.Module):
         
         additional_hidden_layers = []
         for _ in range(num_hidden -1):      
-            additional_hidden_layers.append(nn.Linear(hidden_dim,hidden_dim))
+            additional_hidden_layers.append(nn.Linear(hidden_size,hidden_size))
             additional_hidden_layers.append(nn.ReLU())
         self.additional_hidden_layers = nn.Sequential(*additional_hidden_layers)
 
     def forward(self, x):
-        x = torch.tensor(x).float()
+        if not isinstance(x,torch.Tensor):
+            x = torch.tensor(x)
+        x = x.float()
         x = self.input(x)
         x = F.relu(x)
         if self.num_hidden > 1:
@@ -44,22 +46,19 @@ class Network(nn.Module):
         
 class PolicyNetwork(Network):
     
-    def __init__(self, obs_size, nom_actions, hidden_size = 128, num_hidden = 1):
+    def __init__(self, obs_size, nom_actions, hidden_size = 256, num_hidden = 2):
         super().__init__(obs_size,nom_actions,hidden_size = hidden_size, num_hidden = num_hidden)
         
     def get_action_distribution(self,state):
         return F.softmax(self.forward(state))
     
-    def act(self,state,return_distribution = False):
-        act_distr = Categorical(self.get_action_distribution(state))
-        chosen_action = act_distr.sample().item()
-        if return_distribution:
-            return chosen_action,act_distr
-        else:
-            return chosen_action
+    def act(self,state):
+        act_distr = self.get_action_distribution(state)
+        chosen_action = Categorical(act_distr).sample().item()
+        return chosen_action
         
 class ValueNetwork(Network):
     
-    def __init__(self, obs_size, hidden_size = 128, num_hidden = 1):
+    def __init__(self, obs_size, hidden_size = 256, num_hidden = 2):
         super().__init__(obs_size,1,hidden_size = hidden_size, num_hidden = num_hidden)    
         
