@@ -15,7 +15,7 @@ from utilities import evaluate_policy,flatten_rtmdp_obs
 
 class RTAC:
     
-    def __init__(self,env, test_env, alpha = 0.001, gamma = 0.99, lr_pol = 0.00003, lr_val = 0.0003, buffer_size = 10, batch_size = 4, hidden_size = 256, num_hidden = 2):
+    def __init__(self,env, test_env, alpha = 0.001, gamma = 0.99, lr_pol = 0.00003, lr_val = 0.0003, buffer_size = 10000, batch_size = 256, hidden_size = 256, num_hidden = 2):
         self.ALPHA = alpha
         self.GAMMA = gamma
         self.LR_POL = lr_pol
@@ -53,7 +53,7 @@ class RTAC:
                 state = flatten_rtmdp_obs(state,self.nom_actions)
                 action = self.pol_network.act(state)
                 next_state,reward,done,_ = self.env.step(action)
-                self.replay.add_data( (state,action,reward,next_state[0],done) )
+                self.replay.add_data( (state,reward,next_state[0],done) )
                 state = next_state
                 
                 env_steps += 1
@@ -73,14 +73,14 @@ class RTAC:
                     states = []
                     for obs in sample[:,0]:
                         states.append(torch.tensor(obs))
-                    states = torch.stack(states, dim=0) #tensor auf states
+                    states = torch.stack(states, dim=0) #tensor of states
                     
                     distributions = self.pol_network.get_action_distribution(states) #tensor of action distributions on states
         
-                    rewards = torch.tensor(np.array(sample[:,2],dtype=float)) #reward tensor
+                    rewards = torch.tensor(np.array(sample[:,1],dtype=float)) #reward tensor
                     
                     next_states_obs = []
-                    for obs in sample[:,3]:
+                    for obs in sample[:,2]:
                         next_states_obs.append(torch.tensor(obs))
                     next_states_obs = torch.stack(next_states_obs, dim=0) #tensor of next states without the action part
                     
@@ -89,7 +89,7 @@ class RTAC:
                         values_next_states.append(self.val_network(torch.tensor([flatten_rtmdp_obs( (list(next_states_obs[i]),j),self.nom_actions  ) for i in range(self.BATCH_SIZE)])))
                     values_next_states = torch.squeeze(torch.stack(values_next_states,dim=1),dim=2) #tensor of values of next states with all actions
                     
-                    dones = torch.tensor(np.array(sample[:,4],dtype=float))
+                    dones = torch.tensor(np.array(sample[:,3],dtype=float))
                     
                     """
                     Calculate loss functions now
