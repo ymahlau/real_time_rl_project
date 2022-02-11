@@ -12,6 +12,7 @@ import random
 import torch.nn as nn
 from torch.distributions import Categorical
 from utilities import evaluate_policy,flatten_rtmdp_obs
+import time
 
 class RTAC:
     
@@ -40,8 +41,41 @@ class RTAC:
 
         self.mse_loss = nn.MSELoss()
 
-    def train(self, checkpoint = None):
+    """
+        Loads the model with parameters contained in the files in the 
+        path checkpoint.
+        
+        checkpoint: Absolute path without ending to the two files the model is saved in.
+    """
+    def retrieve_model(self,checkpoint):
+        self.pol_network.load_state_dict(torch.load("{0}.pol".format(checkpoint)))
+        self.val_network.load_state_dict(torch.load("{0}.val".format(checkpoint)))
+        print("Continuing training on {0}.".format(checkpoint))
 
+    """
+        Saves the model with parameters to the files referred to by the file path log_dest.
+        
+        log_dest: Absolute path without ending to the two files the model is to be saved in.
+    """
+    def save_model(self,log_dest):
+        torch.save(self.pol_network.state_dict(),"{0}.pol".format(log_dest))
+        torch.save(self.val_network.state_dict(),"{0}.val".format(log_dest))
+        print("Saved current training progress")
+
+    """
+        Trains the RTAC model with the real-time-soft-actor-critic-algorithm.
+        
+        checkpoint: An absolute path without ending to two files where a model is saved
+        log_dest: An absolute path without ending where to trained model is to regularly saved in
+        log_progress: Whether the training progress is supposed to be logged
+        logging_rate: The rate at which the model is regularly saved given in seconds
+    """
+    def train(self, checkpoint = None, log_dest = None, log_progress = False, logging_rate = 30*60):
+
+        if checkpoint is not None:
+            self.retrieve_model(checkpoint)
+
+        last_log = time.time()
         env_steps = 0
         while True:
         
@@ -50,6 +84,16 @@ class RTAC:
 
             while not done:
                 
+                """
+                If necessary, log model
+                """
+                if log_progress and (time.time() - last_log > logging_rate):
+                    self.save_model(log_dest)
+                    last_log = time.time()
+                     
+                """
+                Perform and save step on environment
+                """
                 state = flatten_rtmdp_obs(state,self.nom_actions)
                 action = self.pol_network.act(state)
                 next_state,reward,done,_ = self.env.step(action)
@@ -123,5 +167,5 @@ env = rtmdp.RTMDP(gym.make('CartPole-v1'),0)
 test_env = rtmdp.RTMDP(gym.make('CartPole-v1'),0)
 
 test = RTAC(env,test_env)
-test.train()
+test.train(log_dest = "./testmodel",log_progress = True, logging_rate = 15)
 
