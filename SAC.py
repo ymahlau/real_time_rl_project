@@ -5,7 +5,7 @@ import torch
 import gym
 
 class SAC:
-    def __init__(self, env, alpha=0.2, gamma=0.99, learning_rate=3e-4, replay_size=1000, batch_size=256):
+    def __init__(self, env, alpha=1, gamma=0.99, learning_rate=3e-4, replay_size=10000, batch_size=256):
         self.env = env
 
         self.alpha = alpha
@@ -14,30 +14,32 @@ class SAC:
         self.replay_size = replay_size
         self.batch_size = batch_size
 
+        self.action_space = self.env.action_space.n
+
         self.value = ValueNetwork(self.env.observation_space.shape[0] + 1)
         self.policy = PolicyNetwork(self.env.observation_space.shape[0], self.env.action_space.n)
         self.value_optim = torch.optim.Adam(self.value.parameters(), lr=self.learning_rate)
         self.policy_optim = torch.optim.Adam(self.policy.parameters(), lr=self.learning_rate)
 
     def value_loss(self, states, actions, rewards, next_states, dones):
-        next_actions_dist = self.policy.get_action_distribution(states)
-        next_actions = torch.tensor([[self.policy.act(s)] for s in states])
-        next_actions_dist = torch.gather(next_actions_dist, 1, next_actions)  # keep only corresponding prob
-        value_targets = self.value(torch.cat((next_states, next_actions), dim=1))
+        with torch.no_grad():
+            next_actions_dist = self.policy.get_action_distribution(states)
+            next_actions = torch.tensor([[self.policy.act(s)] for s in states])
+            next_actions_dist = torch.gather(next_actions_dist, 1, next_actions)  # keep only corresponding prob
+            value_targets = self.value(torch.cat((next_states, next_actions), dim=1))
 
-        targets = (rewards + next_actions_dist * self.gamma * (1 - dones) *
-                   (value_targets - self.alpha * next_actions_dist.log())).detach()
+            targets = (rewards + self.gamma * (1 - dones) *
+                       (value_targets - self.alpha * next_actions_dist.log())).detach()
 
         values = self.value(torch.cat((states, actions), dim=1))
         return torch.pow(values - targets, 2).mean()
 
     def policy_loss(self, states):
         next_actions_dist = self.policy.get_action_distribution(states)
-        next_actions = torch.multinomial(next_actions_dist, 1)  # sample for each row
-        next_actions_dist = torch.gather(next_actions_dist, 1, next_actions)  # keep only corresponding prob
+        values = [self.value(torch.cat((states, (torch.ones(self.batch_size)[:, None]*a)), dim=1)) for a in range(self.action_space)]
+        values = torch.squeeze(torch.stack(values, dim=1), dim=2)
 
-        values = self.value(torch.cat((states, next_actions), dim=1))
-        return (next_actions_dist * (self.alpha * next_actions_dist.log() - values)).mean()
+        return torch.sum(next_actions_dist * (next_actions_dist.log() - (1/self.alpha) * values), 1).mean()
 
     def update_step(self, replay):
         # get samples and sort into batches
@@ -93,9 +95,8 @@ def evaluate_policy(policy, env, iterations=10):
 
 
 if __name__ == '__main__':
-    env = probeEnvironments.TwoStatesActionsEnv()
-    # env = VacuumEnv(4)
-    # env = gym.make('CartPole-v1')
+    #env = probeEnvironments.TwoStatesActionsEnv()
+    env = gym.make('CartPole-v1')
 
     agent = SAC(env)
-    agent.learn()
+    agent.learn(1000000)
