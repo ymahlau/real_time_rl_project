@@ -112,3 +112,31 @@ class TwoStatesActionsEnv(gym.Env):
 
     def close(self):
         return True
+
+class TwoActionsTwoStates(gym.Env):
+    
+    def __init__(self):
+        self.action_space = gym.spaces.Discrete(2)
+        self.observation_space = gym.spaces.Box(low=np.array([0]), high=np.array([4]), dtype=int)
+        self.state = np.random.choice([0, 1])
+
+    def reset(self):
+        self.state = np.random.choice([0, 1])
+        return [self.state]
+
+    def step(self, action):
+        if self.state == 0:
+            self.state = 2
+            return [self.state], 1 , False, {}
+        elif self.state == 1:    
+            self.state = 3
+            return [self.state], 1  , False, {}
+        elif self.state == 2:
+            self.state = 4
+            return [self.state], 1 if action == 1 else 0, True, {}
+        elif self.state == 3:
+            self.state = 4
+            return [self.state], 0 if action == 1 else 1, True, {}
+
+    def close(self):
+        return True
