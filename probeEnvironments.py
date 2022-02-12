@@ -113,7 +113,7 @@ class TwoStatesActionsEnv(gym.Env):
     def close(self):
         return True
 
-class TwoStateDependentActions(gym.Env):
+class TwoActionsTwoStates(gym.Env):
     
     def __init__(self):
         self.action_space = gym.spaces.Discrete(2)

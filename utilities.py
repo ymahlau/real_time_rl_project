@@ -27,11 +27,10 @@ def flatten_rtmdp_obs(obs,num_actions):
     one_hot[obs[1]] = 1
     return list(obs[0]) + list(one_hot)
 
-def evaluate_policy(policy,env):
+def evaluate_policy(policy,env, trials = 10):
     
-    N = 10
     cum_rew = 0
-    for _ in range(N):
+    for _ in range(trials):
         state = env.reset()
         done = False
         while not done:
@@ -39,4 +38,5 @@ def evaluate_policy(policy,env):
             action = policy(state)
             state,reward,done,_ = env.step(action)
             cum_rew += reward
-    print("Policy gathered a average reward of {0} in {1} trials.".format(cum_rew / N,N))
+
+    return cum_rew / trials
