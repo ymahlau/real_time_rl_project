@@ -2,6 +2,7 @@ import random
 from collections import deque
 import gym
 import numpy as np
+import torch
 
 
 class ReplayBuffer:
@@ -20,9 +21,9 @@ class ReplayBuffer:
     
     
 def moving_average(target_params, current_params, factor):
-    
-    for t,c in zip(target_params, current_params):
-        t = factor*c + (1-factor)*t 
+    with torch.no_grad():
+        for t,c in zip(target_params, current_params):
+            t += factor * (c - t)
 
 """
 Converts the observation tuple (s,a) returned by rtmdp's

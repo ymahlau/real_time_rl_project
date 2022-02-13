@@ -17,7 +17,7 @@ import time
 
 class RTAC:
     
-    def __init__(self,env, eval_env = None, entropy_scale = 0.2, discount = 0.99, lr = 0.0003, actor_critic_factor = 0.1 , buffer_size = 10000, batch_size = 256, hidden_size = 256, num_hidden = 2, shared_parameters = True, use_target = True, target_smoothing_factor = 0.005,):
+    def __init__(self,env, eval_env = None, entropy_scale = 0.2, discount = 0.99, lr = 0.0003, actor_critic_factor = 0.1 , buffer_size = 10000, batch_size = 256, hidden_size = 256, num_hidden = 2, shared_parameters = True, use_target = True, target_smoothing_factor = 0.005):
         #Scalar attributes
         self.entropy_scale = entropy_scale
         self.actor_critic_factor = actor_critic_factor
@@ -140,7 +140,7 @@ class RTAC:
                     if self.use_target:
                         values_next_states_target = []
                         for j in range(self.nom_actions):
-                            values_next_states_target.append(self.network.get_value(torch.tensor([flatten_rtmdp_obs( (list(next_states_obs[i]),j),self.nom_actions  ) for i in range(self.batch_size)])))
+                            values_next_states_target.append(self.target.get_value(torch.tensor([flatten_rtmdp_obs( (list(next_states_obs[i]),j),self.nom_actions  ) for i in range(self.batch_size)])))
                         values_next_states_target = torch.squeeze(torch.stack(values_next_states_target,dim=1),dim=2) #tensor of values of next states with all actions
                
                     """
@@ -166,10 +166,11 @@ class RTAC:
                     if self.use_target:
                         moving_average(self.target.parameters(),self.network.parameters(),self.target_smoothing_factor)
 
-
+"""
 env = rtmdp.RTMDP(gym.make('CartPole-v1'),0)
 eval_env = rtmdp.RTMDP(gym.make('CartPole-v1'),0)
 test = RTAC(env,eval_env)
 test.train()
+"""
 
 
