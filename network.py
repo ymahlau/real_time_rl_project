@@ -49,7 +49,9 @@ class PolicyNetwork(Network):
     def __init__(self, obs_size, nom_actions, hidden_size = 256, num_hidden = 2):
         super().__init__(obs_size,nom_actions,hidden_size = hidden_size, num_hidden = num_hidden)
         
-    def get_action_distribution(self,state):
+    def get_action_distribution(self,state,log = False):
+        if log:
+            print(self.forward(state))
         return F.softmax(self.forward(state))
     
     def act(self,state):
@@ -62,3 +64,46 @@ class ValueNetwork(Network):
     def __init__(self, obs_size, hidden_size = 256, num_hidden = 2):
         super().__init__(obs_size,1,hidden_size = hidden_size, num_hidden = num_hidden)    
         
+
+class PolValModule(nn.Module):
+    
+    def __init__(self, obs_size, nom_actions, shared_parameters, hidden_size = 256, num_hidden = 2):
+        super().__init__()
+        
+        self.shared_parameters = shared_parameters
+        
+        if shared_parameters:
+            self.features = Network(obs_size,hidden_size,num_hidden = num_hidden - 1, hidden_size = 256)
+            self.value = nn.Linear(hidden_size,1)
+            self.policy = nn.Linear(hidden_size,nom_actions)
+        else:
+            self.value_network = ValueNetwork(obs_size,hidden_size = hidden_size, num_hidden = num_hidden)
+            self.policy_network = PolicyNetwork(obs_size,nom_actions,hidden_size = hidden_size, num_hidden = num_hidden)
+        
+    def forward(self,x):
+        pass
+    
+    
+    def get_action_distribution(self,state):
+        if self.shared_parameters:
+            features = self.features(state)
+            features = F.relu(features)
+            distr = F.softmax(self.policy(features))
+            return distr
+        else:
+            return self.policy_network.get_action_distribution(state)
+    
+    def act(self,state):
+        act_distr = self.get_action_distribution(state)
+        chosen_action = Categorical(act_distr).sample().item()
+        return chosen_action
+            
+    
+    def get_value(self,state):
+        if self.shared_parameters:
+            features = self.features(state)
+            features = F.relu(features)
+            value = self.value(features)
+            return value
+        else:
+            return self.value_network.forward(state)
