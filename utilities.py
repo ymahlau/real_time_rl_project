@@ -17,7 +17,12 @@ class ReplayBuffer:
 
     def sample(self, sample_size):
         return random.sample(self.replay_buffer, sample_size)
-
+    
+    
+def moving_average(target_params, current_params, factor):
+    
+    for t,c in zip(target_params, current_params):
+        t = factor*c + (1-factor)*t 
 
 """
 Converts the observation tuple (s,a) returned by rtmdp's
