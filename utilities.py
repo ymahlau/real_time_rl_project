@@ -19,18 +19,15 @@ class ReplayBuffer:
     def sample(self, sample_size):
         return random.sample(self.replay_buffer, sample_size)
     
-    
+@torch.no_grad()
 def moving_average(target_params, current_params, factor):
-    with torch.no_grad():
-        for t,c in zip(target_params, current_params):
-            t += factor * (c - t)
+    for t,c in zip(target_params, current_params):
+        t += factor * (c - t)
 
 """
 Converts the observation tuple (s,a) returned by rtmdp's
 into a single sequence s + one_hot_encoding(a)
 """
-
-
 def flatten_rtmdp_obs(obs, num_actions):
     # one-hot
     one_hot = np.zeros(num_actions)

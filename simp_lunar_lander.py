@@ -11,7 +11,7 @@ class SimpLunarLander(gym.Env):
     def __init__(self,step_size):
         self.action_space = gym.spaces.Discrete(4)
         self.observation_space = gym.spaces.Box(-np.inf, np.inf, shape=(4,), dtype=np.float32 )
-        self.reward_range = (0,100)
+        self.reward_range = (-100,100)
         self.state = None
         self.step_size = step_size
         self.engine_acceleration = 2
