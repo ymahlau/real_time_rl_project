@@ -72,7 +72,7 @@ class SAC:
         action_batch = torch.tensor([s[1] for s in samples])
         reward_batch = torch.tensor([s[2] for s in samples])
         next_state_batch = torch.tensor([s[3] for s in samples])
-        done_batch = torch.tensor([s[4] for s in samples], torch.float)
+        done_batch = torch.tensor([s[4] for s in samples], dtype=torch.float)
 
         value_loss = self.value_loss(state_batch, action_batch, reward_batch, next_state_batch, done_batch)
         self.value_optim.zero_grad()
