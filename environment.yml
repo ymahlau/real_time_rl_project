@@ -1,0 +1,18 @@
+name: real-time-rl
+channels:
+  - pytorch
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.9.9
+  - pip=22.0.3
+  - pytorch==1.10.2
+  - git
+  - pip:
+    - matplotlib==3.5.1
+    - gym==0.21.0
+    - numpy==1.22.2
+    - pygame==2.1.1
+    - pytest==7.0.1
+    - tqdm==4.62.3
+    - pandas==1.4.1

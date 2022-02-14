@@ -1,13 +1,23 @@
-import utilities
-from network import PolicyNetwork, ValueNetwork
-from utilities import ReplayBuffer
-import probeEnvironments
-import torch
 import gym
+import torch
+from torch import Tensor
+
+from src.agents.network import PolicyNetwork, ValueNetwork
+from src.utils.utils import ReplayBuffer, evaluate_policy
 
 
 class SAC:
-    def __init__(self, env, alpha=0.2, gamma=0.99, lr_pol=0.0003, lr_val=0.003, replay_size=10000, batch_size=256, hidden_size=256, num_hidden=2):
+    def __init__(
+            self,
+            env: gym.Env,
+            alpha: float = 0.2,
+            gamma: float = 0.99,
+            lr_pol: float = 0.0003,
+            lr_val: float = 0.003,
+            replay_size: int = 10000,
+            batch_size: int = 256,
+            hidden_size: int = 256,
+            num_hidden: int = 2):
         self.env = env
 
         self.alpha = alpha
@@ -19,12 +29,23 @@ class SAC:
 
         self.action_space = self.env.action_space.n
 
-        self.value = ValueNetwork(self.env.observation_space.shape[0] + 1, hidden_size=hidden_size, num_hidden=num_hidden)
-        self.policy = PolicyNetwork(self.env.observation_space.shape[0], self.env.action_space.n, hidden_size=hidden_size, num_hidden=num_hidden)
+        self.value = ValueNetwork(self.env.observation_space.shape[0] + 1,
+                                  hidden_size=hidden_size,
+                                  num_hidden=num_hidden)
+        self.policy = PolicyNetwork(self.env.observation_space.shape[0],
+                                    self.env.action_space.n,
+                                    hidden_size=hidden_size,
+                                    num_hidden=num_hidden)
         self.value_optim = torch.optim.Adam(self.value.parameters(), lr=self.lr_val)
         self.policy_optim = torch.optim.Adam(self.policy.parameters(), lr=self.lr_pol)
 
-    def value_loss(self, states, actions, rewards, next_states, dones):
+    def value_loss(
+            self,
+            states: Tensor,
+            actions: Tensor,
+            rewards: Tensor,
+            next_states: Tensor,
+            dones: Tensor) -> Tensor:
         with torch.no_grad():
             next_actions_dist = self.policy.get_action_distribution(states)
             next_actions = torch.tensor([[self.policy.act(s)] for s in states])
@@ -37,21 +58,21 @@ class SAC:
         values = self.value(torch.cat((states, actions), dim=1))
         return torch.pow(values - targets, 2).mean()
 
-    def policy_loss(self, states):
+    def policy_loss(self, states: Tensor) -> Tensor:
         next_actions_dist = self.policy.get_action_distribution(states)
         values = [self.value(torch.cat((states, (torch.ones(self.batch_size)[:, None]*a)), dim=1)) for a in range(self.action_space)]
         values = torch.squeeze(torch.stack(values, dim=1), dim=2)
 
         return torch.sum(next_actions_dist * (next_actions_dist.log() - (1/self.alpha) * values), 1).mean()
 
-    def update_step(self, replay):
+    def update_step(self, replay: ReplayBuffer):
         # get samples and sort into batches
         samples = replay.sample(self.batch_size)
         state_batch = torch.tensor([s[0] for s in samples])
         action_batch = torch.tensor([s[1] for s in samples])
         reward_batch = torch.tensor([s[2] for s in samples])
         next_state_batch = torch.tensor([s[3] for s in samples])
-        done_batch = torch.tensor([s[4] for s in samples], dtype=float)
+        done_batch = torch.tensor([s[4] for s in samples], torch.float)
 
         value_loss = self.value_loss(state_batch, action_batch, reward_batch, next_state_batch, done_batch)
         self.value_optim.zero_grad()
@@ -63,7 +84,7 @@ class SAC:
         policy_loss.backward()
         self.policy_optim.step()
 
-    def learn(self, iterations=10000, printEval=False):
+    def learn(self, iterations: int = 10000, printEval: bool = False):
         replay = ReplayBuffer(self.replay_size)
 
         for i in range(iterations):
@@ -81,12 +102,4 @@ class SAC:
                     self.update_step(replay)
 
                     if printEval and (steps % 100 == 0 or (done and i % 100 == 0)):
-                        print(utilities.evaluate_policy(self.policy.act, self.env, rtmdp_ob=False))
-
-
-if __name__ == '__main__':
-    env = probeEnvironments.TwoStatesActionsEnv()
-    # env = gym.make('CartPole-v1')
-
-    agent = SAC(env)
-    agent.learn(1000000)
+                        print(evaluate_policy(self.policy.act, self.env, rtmdp_ob=False))
