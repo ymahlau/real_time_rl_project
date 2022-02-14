@@ -1,6 +1,6 @@
 import torch.nn as nn
 import torch.nn.functional as F
-from torch import Tensor
+from torch import Tensor, min
 from torch.distributions import Categorical
 
 from src.agents import Network
@@ -26,6 +26,17 @@ class ValueNetwork(Network):
 
     def __init__(self, obs_size: int, hidden_size: int = 256, num_hidden: int = 2):
         super().__init__(obs_size, 1, hidden_size=hidden_size, num_hidden=num_hidden)
+
+
+class DoubleValueNetwork(nn.Module):
+
+    def __init__(self, obs_size: int, hidden_size: int = 256, num_hidden: int = 2):
+        super().__init__()
+        self.value_network1 = ValueNetwork(obs_size, hidden_size, num_hidden)
+        self.value_network2 = ValueNetwork(obs_size, hidden_size, num_hidden)
+
+    def forward(self, x: Tensor) -> Tensor:
+        return min(self.value_network1(x), self.value_network2(x))
 
 
 class PolicyValueNetwork(nn.Module):
