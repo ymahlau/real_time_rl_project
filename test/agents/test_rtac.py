@@ -1,6 +1,7 @@
 import unittest
 import math
 
+from src.agents import PolicyValueNetwork
 from src.agents.rtac import RTAC
 from src.envs.probe_envs import ConstRewardEnv, PredictableRewardEnv, TwoActionsTwoStates
 from src.utils.utils import evaluate_policy
@@ -9,14 +10,16 @@ from src.utils.wrapper import RTMDP
 
 class TestRTAC(unittest.TestCase):
 
-    def test_value_function(self):
+    def test_value_const_env(self):
         delta = 0.01
 
         env = RTMDP(ConstRewardEnv(), 0)
-        rtac = RTAC(env, lr=0.01, buffer_size=1, batch_size=1, hidden_size=256, num_hidden=2, shared_parameters=False)
-        rtac.train(training_time=1)
+        network = PolicyValueNetwork(2, 1)
+        rtac = RTAC(env, network, lr=0.01, buffer_size=2, batch_size=2)
+        rtac.train(num_episodes=100)
         self.assertAlmostEqual(1, rtac.network.value_network([0, 1]).item(), delta=delta)
 
+    def test_value_predictable_env(self):
         env = RTMDP(PredictableRewardEnv(), 0)
         rtac = RTAC(env, lr=0.01, buffer_size=1, batch_size=1, hidden_size=256, num_hidden=2, shared_parameters=False)
         rtac.train(training_time=1)

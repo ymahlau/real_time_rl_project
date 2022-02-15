@@ -2,7 +2,7 @@ import gym
 import torch
 from torch import Tensor
 
-from src.agents.network import PolicyNetwork, ValueNetwork
+from src.agents.networks import PolicyNetwork, ValueNetwork
 from src.utils.utils import ReplayBuffer, evaluate_policy
 
 
