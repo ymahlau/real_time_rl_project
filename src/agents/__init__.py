@@ -13,28 +13,20 @@ class ActorCritic(ABC):
     def __init__(
             self,
             env: gym.Env,
-            input_size: int,
             buffer_size: int = 10000,
             use_target: bool = False,
             batch_size: int = 256,
             discount_factor: float = 0.99,
-            hidden_size: int = 256,
     ):
         # environment
         if not isinstance(env.action_space, gym.spaces.Discrete):
             raise ValueError("Action space is not discrete!")
         self.env = env
-        self.input_size = input_size
         self.num_actions = env.action_space.n
         self.discount_factor = discount_factor
 
-        # networks
-        self.network = PolicyValueNetwork(input_size, self.num_actions, hidden_size=hidden_size)
+        # network
         self.use_target = use_target
-        if use_target:
-            self.target_network = PolicyValueNetwork(input_size, self.num_actions, hidden_size=hidden_size)
-        else:
-            self.target_network = None
 
         # buffer
         self.buffer_size = buffer_size
@@ -44,7 +36,7 @@ class ActorCritic(ABC):
         self.buffer = ReplayBuffer(buffer_size)
 
     @abstractmethod
-    def act(self, obs: Any) -> Tensor:
+    def act(self, obs: Any) -> int:
         pass
 
     @abstractmethod
@@ -59,29 +51,17 @@ class ActorCritic(ABC):
     def update(self, samples: List[Tuple[Any, int, float, Any, bool]]):
         pass
 
+    @abstractmethod
     def load_network(self, checkpoint: str):
-        """
-            Loads the model with parameters contained in the files in the
-            path checkpoint.
+        pass
 
-            checkpoint: Absolute path without ending to the two files the model is saved in.
-        """
-        self.network.load_state_dict(torch.load(f"{checkpoint}.model"))
-        if self.use_target:
-            self.target_network.load_state_dict(torch.load(f"{checkpoint}.model"))
-        print(f"Continuing training on {checkpoint}.")
-
+    @abstractmethod
     def save_network(self, log_dest: str):
-        """
-           Saves the model with parameters to the files referred to by the file path log_dest.
-           log_dest: Absolute path without ending to the two files the model is to be saved in.
-       """
-        torch.save(self.network.state_dict(), f"{log_dest}.model")
-        print("Saved current training progress")
+        pass
 
     def evaluate(self,
                  logging_rate: int = 10,
-                 num_episodes: int = 100,
+                 num_steps: int = 100,
                  checkpoint: Optional[str] = None,
                  log_dest: Optional[str] = None,
                  log_progress: bool = False,
@@ -89,7 +69,7 @@ class ActorCritic(ABC):
         return self._train_loop(
             train=False,
             logging_rate=logging_rate,
-            num_episodes=num_episodes,
+            num_steps=num_steps,
             checkpoint=checkpoint,
             log_dest=log_dest,
             log_progress=log_progress
@@ -97,7 +77,7 @@ class ActorCritic(ABC):
 
     def train(self,
               logging_rate: int = 10,
-              num_episodes: int = 100,
+              num_steps: int = 100,
               checkpoint: Optional[str] = None,
               log_dest: Optional[str] = None,
               log_progress: bool = False,
@@ -105,7 +85,7 @@ class ActorCritic(ABC):
         self._train_loop(
             train=True,
             logging_rate=logging_rate,
-            num_episodes=num_episodes,
+            num_steps=num_steps,
             checkpoint=checkpoint,
             log_dest=log_dest,
             log_progress=log_progress
@@ -115,7 +95,7 @@ class ActorCritic(ABC):
             self,
             train: bool = True,
             logging_rate: int = 10,
-            num_episodes: int = 100,
+            num_steps: int = 100,
             checkpoint: Optional[str] = None,
             log_dest: Optional[str] = None,
             log_progress: bool = False,
@@ -124,9 +104,11 @@ class ActorCritic(ABC):
         if checkpoint is not None:
             self.load_network(checkpoint)
 
+        cum_reward = 0
         env_steps = 0
+        num_episodes = 0
 
-        for episode in range(1, num_episodes + 1):
+        while env_steps < num_steps:
 
             done = False
             state = self.env.reset()
@@ -135,14 +117,20 @@ class ActorCritic(ABC):
                 # logging
 
                 # Perform step on env and add step data to replay buffer
-                action = self.act(state).item()
+                action = self.act(state)
                 next_state, reward, done, _ = self.env.step(action)
                 self.buffer.add_data((state, action, reward, next_state, done))
+
                 state = next_state
+                cum_reward += reward
+                env_steps += 1
 
                 # update
                 if train and self.buffer.capacity_reached():
                     samples = self.buffer.sample(self.batch_size)
                     self.update(samples)
 
-        return None
+            num_episodes += 1
+
+        if not train:
+            return cum_reward / num_episodes

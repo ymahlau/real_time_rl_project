@@ -1,7 +1,8 @@
 import random
 from collections import deque
-from typing import Union, Any, Tuple, List
+from typing import Union, Any, Tuple, List, Callable
 
+import gym
 import numpy as np
 import torch
 from torch import Tensor
@@ -42,7 +43,7 @@ def flatten_rtmdp_obs(obs: Union[np.ndarray, Tensor], num_actions: int) -> list[
     return list(obs[0]) + list(one_hot)
 
 
-def evaluate_policy(policy, env, trials=10, rtmdp_ob=True) -> float:
+def evaluate_policy(policy: Callable, env: gym.Env, trials: int = 10, rtmdp_ob: bool = True) -> float:
     cum_rew = 0
     for _ in range(trials):
         state = env.reset()

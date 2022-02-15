@@ -121,7 +121,7 @@ class PolicyValueNetwork(nn.Module):
         else:
             return self.policy_network.get_action_distribution(state)
 
-    def act(self, state: Tensor) -> Tensor:
+    def act(self, state: Tensor) -> int:
         act_dist = self.get_action_distribution(state)
         chosen_action = Categorical(act_dist).sample().item()
         return chosen_action
