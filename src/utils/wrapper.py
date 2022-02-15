@@ -18,7 +18,7 @@ class RTMDP(gym.Wrapper):
         self.initial_action = initial_action
         self.last_action = initial_action
 
-    def reset(self) -> Tuple[gym.spaces.Tuple, int]:
+    def reset(self) -> tuple[Any, int]:
         self.last_action = self.initial_action
         s0 = super().reset()
         return s0, self.initial_action

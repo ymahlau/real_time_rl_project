@@ -8,16 +8,17 @@ from src.utils.utils import evaluate_policy
 
 class TestSAC(unittest.TestCase):
 
-    def test_value_function(self):
+    def test_value_function_const_env(self):
         delta = 0.2
-
         env = ConstRewardEnv()
-        sac = SAC(env, alpha=0.2, lr_val=0.01, replay_size=1, batch_size=1, hidden_size=256, num_hidden=2)
+        sac = SAC(env, entropy_scale=0.2, lr=0.01, buffer_size=1, batch_size=1, hidden_size=256, num_layers=2)
         sac.learn(iterations=1000)
         self.assertAlmostEqual(1, sac.value([0, 1]).item(), delta=delta)
 
+    def test_value_function_predicable_env(self):
+        delta = 0.2
         env = PredictableRewardEnv()
-        sac = SAC(env, alpha=0.2, lr_val=0.01, replay_size=1, batch_size=1, hidden_size=256, num_hidden=2)
+        sac = SAC(env, entropy_scale=0.2, lr=0.01, buffer_size=1, batch_size=1, hidden_size=256, num_layers=2)
         sac.learn(iterations=1000)
         self.assertAlmostEqual(1, sac.value([1, 1]).item(), delta=delta)
         self.assertAlmostEqual(-1, sac.value([-1, 1]).item(), delta=delta)
@@ -27,7 +28,7 @@ class TestSAC(unittest.TestCase):
 
         # Check if optimal policy can be adopted
         env = TwoActionsTwoStates()
-        sac = SAC(env, alpha=1, gamma=1, lr_pol=0.003, lr_val=0.01, replay_size=100, batch_size=8,
+        sac = SAC(env, entropy_scale=1, discount_factor=1, lr_pol=0.003, lr_val=0.01, buffer_size=100, batch_size=8,
                   hidden_size=256, num_hidden=2)
         sac.learn(iterations=1000)
         avg = evaluate_policy(sac.policy.act, env, trials=1000, rtmdp_ob=False)
@@ -39,7 +40,7 @@ class TestSAC(unittest.TestCase):
 
         # Check if random policy is adopted when entropy is valued extremely highly
         env = TwoActionsTwoStates()
-        sac = SAC(env, alpha=10, gamma=1, lr_pol=0.003, lr_val=0.03, replay_size=200, batch_size=16,
+        sac = SAC(env, entropy_scale=10, discount_factor=1, lr_pol=0.003, lr_val=0.03, buffer_size=200, batch_size=16,
                   hidden_size=256, num_hidden=2)
         sac.learn(iterations=1000)
         avg = evaluate_policy(sac.policy.act, env, trials=1000, rtmdp_ob=False)

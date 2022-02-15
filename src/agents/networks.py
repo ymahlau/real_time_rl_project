@@ -66,7 +66,7 @@ class PolicyNetwork(Network):
         else:
             raise ValueError('Softmax of 3d tensor not supported')
 
-    def act(self, state: Tensor) -> Tensor:
+    def act(self, state: Tensor) -> int:
         act_dist = self.get_action_distribution(state)
         chosen_action = Categorical(act_dist).sample().item()
         return chosen_action
@@ -93,6 +93,8 @@ class PolicyValueNetwork(nn.Module):
             raise ValueError('With shared parameters there have to be at least two layers')
 
         self.shared_parameters = shared_parameters
+        self.input_size = input_size
+        self.output_size = output_size
 
         if shared_parameters:
             self.features = Network(input_size, hidden_size, num_layers=num_layers - 1, hidden_size=256)

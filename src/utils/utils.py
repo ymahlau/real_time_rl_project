@@ -15,13 +15,13 @@ class ReplayBuffer:
     def __len__(self):
         return len(self.buffer)
 
-    def add_data(self, data: Tuple[Any, float, Any, bool]):  # state, reward, next_state, done
+    def add_data(self, data: Tuple[Any, int, float, Any, bool]):  # state, action, reward, next_state, done
         self.buffer.append(data)
 
     def capacity_reached(self):
         return len(self.buffer) >= self.buffer.maxlen
 
-    def sample(self, sample_size: int) -> List[Tuple[Any, float, Any, bool]]:
+    def sample(self, sample_size: int) -> List[Tuple[Any, int, float, Any, bool]]:
         return random.sample(self.buffer, sample_size)
 
 
