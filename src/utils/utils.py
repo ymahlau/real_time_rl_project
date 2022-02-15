@@ -1,7 +1,8 @@
 import random
 from collections import deque
-from typing import Union, Any
+from typing import Union, Any, Tuple, List, Callable
 
+import gym
 import numpy as np
 import torch
 from torch import Tensor
@@ -10,16 +11,19 @@ from torch import Tensor
 class ReplayBuffer:
 
     def __init__(self, capacity: int):
-        self.replay_buffer = deque(maxlen=capacity)
+        self.buffer = deque(maxlen=capacity)
 
-    def add_data(self, data: Any):
-        self.replay_buffer.append(data)
+    def __len__(self):
+        return len(self.buffer)
+
+    def add_data(self, data: Tuple[Any, int, float, Any, bool]):  # state, action, reward, next_state, done
+        self.buffer.append(data)
 
     def capacity_reached(self):
-        return len(self.replay_buffer) >= self.replay_buffer.maxlen
+        return len(self.buffer) >= self.buffer.maxlen
 
-    def sample(self, sample_size: int) -> Any:
-        return random.sample(self.replay_buffer, sample_size)
+    def sample(self, sample_size: int) -> List[Tuple[Any, int, float, Any, bool]]:
+        return random.sample(self.buffer, sample_size)
 
 
 @torch.no_grad()
@@ -33,13 +37,13 @@ def flatten_rtmdp_obs(obs: Union[np.ndarray, Tensor], num_actions: int) -> list[
     Converts the observation tuple (s,a) returned by rtmdp
     into a single sequence s + one_hot_encoding(a)
     """
-    # one-hot
+    # one-hot action encoding
     one_hot = np.zeros(num_actions)
     one_hot[obs[1]] = 1
     return list(obs[0]) + list(one_hot)
 
 
-def evaluate_policy(policy, env, trials=10, rtmdp_ob=True) -> float:
+def evaluate_policy(policy: Callable, env: gym.Env, trials: int = 10, rtmdp_ob: bool = True) -> float:
     cum_rew = 0
     for _ in range(trials):
         state = env.reset()

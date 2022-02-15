@@ -30,7 +30,7 @@ class ConstRewardEnv(gym.Env):
 
 class PredictableRewardEnv(gym.Env):
     """
-    Environment with one action, two observation (+1/-1), one timestep and observation-dependent reward (+1/-1).
+    Environment with one action, two observation (+1/-1), one time step and observation-dependent reward (+1/-1).
     """
     def __init__(self):
         self.action_space = gym.spaces.Discrete(1)
