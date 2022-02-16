@@ -32,7 +32,7 @@ def moving_average(target_params, current_params, factor):
         t += factor * (c - t)
 
 
-def flatten_rtmdp_obs(obs: Union[np.ndarray, Tensor], num_actions: int) -> list[Any]:
+def flatten_rtmdp_obs(obs: Union[np.ndarray, Tensor], num_actions: int) -> List[Any]:
     """
     Converts the observation tuple (s,a) returned by rtmdp
     into a single sequence s + one_hot_encoding(a)

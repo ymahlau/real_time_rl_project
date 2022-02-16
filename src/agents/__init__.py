@@ -15,8 +15,10 @@ class ActorCritic(ABC):
             env: gym.Env,
             buffer_size: int = 10000,
             use_target: bool = False,
+            double_target: bool = False,
             batch_size: int = 256,
             discount_factor: float = 0.99,
+            reward_scaling_factor: float = 1.0,
     ):
         # environment
         if not isinstance(env.action_space, gym.spaces.Discrete):
@@ -24,9 +26,13 @@ class ActorCritic(ABC):
         self.env = env
         self.num_actions = env.action_space.n
         self.discount_factor = discount_factor
+        self.reward_scaling_factor = reward_scaling_factor
 
         # network
         self.use_target = use_target
+        self.double_target = double_target
+        if self.double_target and not self.use_target:
+            raise ValueError("You cannot use double target and disallow the use of target at the same time.")
 
         # buffer
         self.buffer_size = buffer_size
@@ -119,7 +125,7 @@ class ActorCritic(ABC):
                 # Perform step on env and add step data to replay buffer
                 action = self.act(state)
                 next_state, reward, done, _ = self.env.step(action)
-                self.buffer.add_data((state, action, reward, next_state, done))
+                self.buffer.add_data((state, action, self.reward_scaling_factor*reward, next_state, done))
 
                 state = next_state
                 cum_reward += reward

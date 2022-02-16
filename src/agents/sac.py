@@ -16,11 +16,13 @@ class SAC(ActorCritic):
             env: gym.Env,
             entropy_scale: float = 0.2,
             discount_factor: float = 0.99,
+            reward_scaling_factor: float = 1.0,
             lr: float = 0.0003,
             actor_critic_factor: float = 0.1,
             buffer_size: int = 10000,
             batch_size: int = 256,
             use_target: bool = False,
+            double_target: bool = False,
             hidden_size: int = 256,
             num_layers: int = 2,
             target_smoothing_factor: float = 0.005):
@@ -28,8 +30,10 @@ class SAC(ActorCritic):
             env,
             buffer_size=buffer_size,
             use_target=use_target,
+            double_target = double_target,
             batch_size=batch_size,
             discount_factor=discount_factor,
+            reward_scaling_factor = reward_scaling_factor,
         )
 
         # scalar

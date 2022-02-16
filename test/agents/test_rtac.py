@@ -33,7 +33,7 @@ class TestRTAC(unittest.TestCase):
         delta = 0.2
         env = RTMDP(TwoActionsTwoStates(), initial_action=0)
         rtac = RTAC(env, lr=0.01, buffer_size=100, batch_size=10)
-        rtac.train(num_steps=1000)
+        rtac.train(num_steps=2000)
         avg = evaluate_policy(rtac.network.policy_network.act, env, trials=1000)
 
         self.assertAlmostEqual(2, avg, delta=delta)
@@ -47,7 +47,7 @@ class TestRTAC(unittest.TestCase):
         # Check if random policy is adopted when entropy is valued extremely highly
         env = RTMDP(TwoActionsTwoStates(), initial_action=0)
         rtac = RTAC(env, lr=0.01, buffer_size=100, batch_size=10, entropy_scale=100)
-        rtac.train(num_steps=3000)
+        rtac.train(num_steps=4000)
         avg = evaluate_policy(rtac.network.policy_network.act, env, trials=1000)
 
         self.assertAlmostEqual(1.5, avg, delta=0.2)

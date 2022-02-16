@@ -18,12 +18,12 @@ class RTMDP(gym.Wrapper):
         self.initial_action = initial_action
         self.last_action = initial_action
 
-    def reset(self) -> tuple[Any, int]:
+    def reset(self) -> Tuple[Any, int]:
         self.last_action = self.initial_action
         s0 = super().reset()
         return s0, self.initial_action
 
-    def step(self, action: int) -> tuple[tuple[Any, int], Any, Any, Any]:
+    def step(self, action: int) -> Tuple[Tuple[Any, int], Any, Any, Any]:
         s, r, d, m = super().step(self.last_action)
         self.last_action = action
         return (s, action), r, d, m
