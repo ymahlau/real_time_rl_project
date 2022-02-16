@@ -24,7 +24,7 @@ class RTAC(ActorCritic):
             buffer_size: int = 10000,
             batch_size: int = 256,
             use_target: bool = False,
-            double_target: bool = False,
+            double_value: bool = False,
             hidden_size: int = 256,
             num_layers: int = 2,
             target_smoothing_factor: float = 0.005,
@@ -42,7 +42,7 @@ class RTAC(ActorCritic):
             batch_size=batch_size,
             buffer_size=buffer_size,
             discount_factor=discount_factor,
-            double_target = double_target,
+            double_value = double_value,
             reward_scaling_factor = reward_scaling_factor,
         )
 
@@ -55,10 +55,10 @@ class RTAC(ActorCritic):
         # networks
         self.input_size = env.observation_space[0].shape[0] + env.observation_space[1].n
         self.network = PolicyValueNetwork(self.input_size, self.num_actions, num_layers=num_layers,
-                                          hidden_size=hidden_size, shared_parameters=shared_parameters)
+                                          hidden_size=hidden_size, shared_parameters=shared_parameters, double_value = self.double_value)
         if use_target:
             self.target_network = PolicyValueNetwork(self.input_size, self.num_actions, num_layers=num_layers,
-                                                     hidden_size=hidden_size, shared_parameters=shared_parameters)
+                                                     hidden_size=hidden_size, shared_parameters=shared_parameters, double_value = self.double_value)
 
         # optimizer and loss
         self.optim = optim.Adam(self.network.parameters(), lr=lr)

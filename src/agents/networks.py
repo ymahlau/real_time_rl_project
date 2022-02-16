@@ -85,6 +85,7 @@ class PolicyValueNetwork(nn.Module):
             input_size: int,
             output_size: int,
             shared_parameters: bool = False,
+            double_value: bool = False,
             hidden_size: int = 256,
             num_layers: int = 2):
         super().__init__()
@@ -93,16 +94,21 @@ class PolicyValueNetwork(nn.Module):
             raise ValueError('With shared parameters there have to be at least two layers')
 
         self.shared_parameters = shared_parameters
+        self.double_value = double_value
         self.input_size = input_size
         self.output_size = output_size
 
         if shared_parameters:
             self.features = Network(input_size, hidden_size, num_layers=num_layers - 1, hidden_size=256)
             self.value = nn.Linear(hidden_size, 1)
+            if double_value:
+                self.value2 = nn.Linear(hidden_size,1)
             self.policy = nn.Linear(hidden_size, output_size)
         else:
             self.value_network = ValueNetwork(input_size, hidden_size=hidden_size, num_layers=num_layers)
             self.policy_network = PolicyNetwork(input_size, output_size, hidden_size=hidden_size, num_layers=num_layers)
+            if double_value:
+                self.value2_network = ValueNetwork(input_size, hidden_size=hidden_size, num_layers=num_layers)
 
     def forward(self, x: Tensor) -> Tensor:
         pass
@@ -131,8 +137,15 @@ class PolicyValueNetwork(nn.Module):
             features = self.features(state)
             features = F.relu(features)
             value = self.value(features)
-            return value
+            if self.double_value:
+                value2 = self.value2(features)
+                return torch.minimum(value,value2)
+            else:
+                return value
         else:
-            return self.value_network.forward(state)
+            if self.double_value:
+                return torch.min(self.value_network(state),self.value2_network(state))
+            else:
+                return self.value_network.forward(state)
 
 

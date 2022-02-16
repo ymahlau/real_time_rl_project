@@ -15,7 +15,7 @@ class ActorCritic(ABC):
             env: gym.Env,
             buffer_size: int = 10000,
             use_target: bool = False,
-            double_target: bool = False,
+            double_value: bool = False,
             batch_size: int = 256,
             discount_factor: float = 0.99,
             reward_scaling_factor: float = 1.0,
@@ -30,9 +30,7 @@ class ActorCritic(ABC):
 
         # network
         self.use_target = use_target
-        self.double_target = double_target
-        if self.double_target and not self.use_target:
-            raise ValueError("You cannot use double target and disallow the use of target at the same time.")
+        self.double_value = double_value
 
         # buffer
         self.buffer_size = buffer_size
