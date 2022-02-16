@@ -4,6 +4,7 @@ import gym
 import torch
 from torch import Tensor
 
+import torch.nn as nn
 from src.agents import ActorCritic
 from src.agents.networks import PolicyNetwork, ValueNetwork
 from src.utils.utils import ReplayBuffer, evaluate_policy, moving_average
@@ -30,10 +31,10 @@ class SAC(ActorCritic):
             env,
             buffer_size=buffer_size,
             use_target=use_target,
-            double_value = double_value,
+            double_value=double_value,
             batch_size=batch_size,
             discount_factor=discount_factor,
-            reward_scaling_factor = reward_scaling_factor,
+            reward_scaling_factor=reward_scaling_factor,
         )
 
         # scalar
@@ -59,6 +60,7 @@ class SAC(ActorCritic):
         # optimizer
         self.value_optim = torch.optim.Adam(self.value.parameters(), lr=self.lr)
         self.policy_optim = torch.optim.Adam(self.policy.parameters(), lr=self.lr * actor_critic_factor)
+        self.mse_loss = nn.MSELoss()
 
     def load_network(self, checkpoint: str):
         """
@@ -103,16 +105,26 @@ class SAC(ActorCritic):
             rewards: Tensor,
             next_states: Tensor,
             dones: Tensor) -> Tensor:
+
+        dones_expanded = dones.expand(-1, self.num_actions)
         next_actions_dist = self.policy.get_action_distribution(next_states)
-        value_targets = [self.value(torch.cat((next_states, (torch.ones(self.batch_size)[:, None] * a)), dim=1))
-                         for a in range(self.num_actions)]
-        value_targets = torch.squeeze(torch.stack(value_targets, dim=1), dim=2)
 
-        targets = rewards + torch.sum(next_actions_dist * (self.discount_factor * (1 - dones.expand(-1, self.num_actions)) *
-                  value_targets - self.entropy_scale * next_actions_dist.log()), 1).unsqueeze(1).detach()
-        values = self.value(torch.cat((states, actions), dim=1))
+        if self.use_target:
+            targets_value = [self.target(torch.cat((next_states, (torch.ones(self.batch_size)[:, None] * a)), dim=1))
+                             for a in range(self.num_actions)]
+        else:
+            targets_value = [self.value(torch.cat((next_states, (torch.ones(self.batch_size)[:, None] * a)), dim=1))
+                             for a in range(self.num_actions)]
 
-        return torch.pow(values - targets, 2).mean()
+        targets_value = torch.squeeze(torch.stack(targets_value, dim=1), dim=2).float()
+        targets_discount = self.discount_factor * (1 - dones_expanded) * targets_value
+        targets_entropy = self.entropy_scale * next_actions_dist.log()
+
+        targets = torch.sum(next_actions_dist * (targets_discount - targets_entropy), 1, dtype=torch.float)
+        targets = rewards + targets.unsqueeze(1).detach().float()
+
+        values = self.value(torch.cat((states, actions), dim=1)).float()
+        return self.mse_loss(values, targets)
 
     def policy_loss(self, states: Tensor, done_batch: Tensor) -> Tensor:
         next_actions_dist = self.policy.get_action_distribution(states)
@@ -125,10 +137,10 @@ class SAC(ActorCritic):
         return policy_loss
 
     def update(self, samples: List[Tuple[Any, int, float, Any, bool]]):
-        state_batch = torch.tensor([s[0] for s in samples])
-        action_batch = torch.tensor([s[1] for s in samples]).unsqueeze(dim=1)
-        reward_batch = torch.tensor([s[2] for s in samples]).unsqueeze(dim=1)
-        next_state_batch = torch.tensor([s[3] for s in samples])
+        state_batch = torch.tensor([s[0] for s in samples]).float()
+        action_batch = torch.tensor([s[1] for s in samples]).unsqueeze(dim=1).float()
+        reward_batch = torch.tensor([s[2] for s in samples]).unsqueeze(dim=1).float()
+        next_state_batch = torch.tensor([s[3] for s in samples]).float()
         done_batch = torch.tensor([s[4] for s in samples], dtype=torch.float).unsqueeze(dim=1)
 
         value_loss = self.value_loss(state_batch, action_batch, reward_batch, next_state_batch, done_batch)
@@ -144,4 +156,3 @@ class SAC(ActorCritic):
         if self.use_target:
             moving_average(self.target.parameters(), self.value.parameters(),
                            self.target_smoothing_factor)
-
