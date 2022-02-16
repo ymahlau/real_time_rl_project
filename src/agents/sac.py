@@ -1,3 +1,4 @@
+from functools import partial
 from typing import List, Tuple, Any
 
 import gym
@@ -7,7 +8,7 @@ from torch import Tensor
 import torch.nn as nn
 from src.agents import ActorCritic
 from src.agents.networks import PolicyNetwork, ValueNetwork
-from src.utils.utils import ReplayBuffer, evaluate_policy, moving_average
+from src.utils.utils import moving_average, one_hot_encoding
 import numpy as np
 
 
@@ -45,11 +46,11 @@ class SAC(ActorCritic):
         self.target_smoothing_factor = target_smoothing_factor
 
         # networks
-        self.value = ValueNetwork(self.env.observation_space.shape[0] + 1,
+        self.value = ValueNetwork(self.env.observation_space.shape[0] + self.num_actions,
                                   hidden_size=hidden_size,
                                   num_layers=num_layers)
         if self.use_target:
-            self.target = ValueNetwork(self.env.observation_space.shape[0] + 1,
+            self.target = ValueNetwork(self.env.observation_space.shape[0] + self.num_actions,
                                        hidden_size=hidden_size,
                                        num_layers=num_layers)
 
@@ -61,7 +62,10 @@ class SAC(ActorCritic):
         # optimizer
         self.value_optim = torch.optim.Adam(self.value.parameters(), lr=self.lr)
         self.policy_optim = torch.optim.Adam(self.policy.parameters(), lr=self.lr * actor_critic_factor)
+
+        # functions
         self.mse_loss = nn.MSELoss()
+        self.one_hot = partial(one_hot_encoding, self.num_actions)
 
     def load_network(self, checkpoint: str):
         """
@@ -90,7 +94,7 @@ class SAC(ActorCritic):
         return action
 
     def get_value(self, obs: Tuple[Any, int]) -> Tensor:
-        obs_tensor = torch.cat((torch.tensor(obs[0]), torch.tensor([obs[1]])), dim=0)
+        obs_tensor = torch.cat((torch.tensor(obs[0]), torch.tensor(self.one_hot(obs[1]))), dim=0)
         value = self.value(obs_tensor)
         return value
 
@@ -109,12 +113,13 @@ class SAC(ActorCritic):
 
         dones_expanded = dones.expand(-1, self.num_actions)
         next_actions_dist = self.policy.get_action_distribution(next_states)
+        next_actions = [torch.tensor(self.one_hot(a)) for a in range(self.num_actions)]
 
         if self.use_target:
-            targets_value = [self.target(torch.cat((next_states, (torch.ones(self.batch_size)[:, None] * a)), dim=1))
+            targets_value = [self.target(torch.cat((next_states, next_actions[a].expand(self.batch_size, -1)), dim=1))
                              for a in range(self.num_actions)]
         else:
-            targets_value = [self.value(torch.cat((next_states, (torch.ones(self.batch_size)[:, None] * a)), dim=1))
+            targets_value = [self.value(torch.cat((next_states, next_actions[a].expand(self.batch_size, -1)), dim=1))
                              for a in range(self.num_actions)]
 
         targets_value = torch.squeeze(torch.stack(targets_value, dim=1), dim=2).float()
@@ -127,10 +132,10 @@ class SAC(ActorCritic):
         values = self.value(torch.cat((states, actions), dim=1)).float()
         return self.mse_loss(values, targets)
 
-    def policy_loss(self, states: Tensor, done_batch: Tensor) -> Tensor:
+    def policy_loss(self, states: Tensor) -> Tensor:
         next_actions_dist = self.policy.get_action_distribution(states)
-        values = [self.value(torch.cat((states, (torch.ones(self.batch_size)[:, None] * a)), dim=1)) for a in
-                  range(self.num_actions)]
+        values = [self.value(torch.cat((states, torch.tensor(self.one_hot(a)).expand(self.batch_size, -1)), dim=1))
+                  for a in range(self.num_actions)]
         values = torch.squeeze(torch.stack(values, dim=1), dim=2).detach()
 
         kl_div_term = next_actions_dist.log() - self.discount_factor * (1 / self.entropy_scale) * values
@@ -139,7 +144,7 @@ class SAC(ActorCritic):
 
     def update(self, samples: List[Tuple[Any, int, float, Any, bool]]):
         state_batch = torch.tensor([s[0] for s in samples]).float()
-        action_batch = torch.tensor([s[1] for s in samples]).unsqueeze(dim=1).float()
+        action_batch = torch.tensor([self.one_hot(s[1]) for s in samples]).float()
         reward_batch = torch.tensor([s[2] for s in samples]).unsqueeze(dim=1).float()
         next_state_batch = torch.tensor([s[3] for s in samples]).float()
         done_batch = torch.tensor([s[4] for s in samples], dtype=torch.float).unsqueeze(dim=1)
@@ -149,7 +154,7 @@ class SAC(ActorCritic):
         value_loss.backward()
         self.value_optim.step()
 
-        policy_loss = self.policy_loss(state_batch, done_batch)
+        policy_loss = self.policy_loss(state_batch)
         self.policy_optim.zero_grad()
         policy_loss.backward()
         self.policy_optim.step()

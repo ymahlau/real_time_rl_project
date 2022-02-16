@@ -37,10 +37,17 @@ def flatten_rtmdp_obs(obs: Union[np.ndarray, Tensor], num_actions: int) -> List[
     Converts the observation tuple (s,a) returned by rtmdp
     into a single sequence s + one_hot_encoding(a)
     """
-    # one-hot action encoding
-    one_hot = np.zeros(num_actions)
-    one_hot[obs[1]] = 1
-    return list(obs[0]) + list(one_hot)
+    return list(obs[0]) + list(one_hot_encoding(num_actions, obs[1]))
+
+
+def one_hot_encoding(size: int, pos: int) -> np.ndarray:
+    """
+    Creates a one-hot-encoding given an array size and position
+    """
+    assert size > pos >= 0
+    one_hot = np.zeros(size)
+    one_hot[pos] = 1
+    return one_hot
 
 
 def evaluate_policy(policy: Callable, env: gym.Env, trials: int = 10, rtmdp_ob: bool = True) -> float:

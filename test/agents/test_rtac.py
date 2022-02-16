@@ -33,7 +33,7 @@ class TestRTAC(unittest.TestCase):
         delta = 0.2
         env = RTMDP(TwoActionsTwoStates(), initial_action=0)
         rtac = RTAC(env, lr=0.01, buffer_size=100, batch_size=10)
-        rtac.train(num_steps=2000)
+        rtac.train(num_steps=4000)
         avg = evaluate_policy(rtac.network.policy_network.act, env, trials=1000)
 
         self.assertAlmostEqual(2, avg, delta=delta)
