@@ -81,3 +81,19 @@ class TestSAC(unittest.TestCase):
         self.assertAlmostEqual(2, sac.value([1, 0]).item(), delta=delta)
         self.assertAlmostEqual(1, sac.value([2, 1]).item(), delta=delta)
         self.assertAlmostEqual(1, sac.value([3, 0]).item(), delta=delta)
+
+    def test_double_network(self):
+        delta = 0.1
+
+        # Check if optimal policy can be adopted
+        env = TwoActionsTwoStates()
+        sac = SAC(env, entropy_scale=0.2, discount_factor=1, lr=0.01, buffer_size=100, batch_size=20,
+                  hidden_size=256, num_layers=2, double_value=True)
+        sac.train(num_steps=4000)
+
+        avg = evaluate_policy(sac.policy.act, env, trials=1000, rtmdp_ob=False)
+        self.assertAlmostEqual(2, avg, delta=delta)
+        self.assertAlmostEqual(2, sac.value([0, 0]).item(), delta=delta)
+        self.assertAlmostEqual(2, sac.value([1, 0]).item(), delta=delta)
+        self.assertAlmostEqual(1, sac.value([2, 1]).item(), delta=delta)
+        self.assertAlmostEqual(1, sac.value([3, 0]).item(), delta=delta)

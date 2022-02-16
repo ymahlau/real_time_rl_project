@@ -4,6 +4,7 @@ import torch.nn.functional as F
 from torch import Tensor
 from torch.distributions import Categorical
 
+
 class Network(nn.Module):
     """Neural network with variable dimensions"""
 
@@ -72,10 +73,27 @@ class PolicyNetwork(Network):
         return chosen_action
 
 
-class ValueNetwork(Network):
+class ValueNetwork(nn.Module):
 
-    def __init__(self, input_size: int, hidden_size: int = 256, num_layers: int = 2):
-        super().__init__(input_size, 1, hidden_size=hidden_size, num_layers=num_layers)
+    def __init__(self, input_size: int, hidden_size: int = 256, num_layers: int = 2, double_value: bool = False):
+        super().__init__()
+        self.double_value = double_value
+
+        self.value = Network(input_size=input_size,
+                             output_size=1,
+                             hidden_size=hidden_size,
+                             num_layers=num_layers)
+        if double_value:
+            self.value2 = Network(input_size=input_size,
+                                  output_size=1,
+                                  hidden_size=hidden_size,
+                                  num_layers=num_layers)
+
+    def forward(self, x: Tensor) -> Tensor:
+        if self.double_value:
+            return torch.minimum(self.value(x), self.value2(x))
+        else:
+            return self.value(x)
 
 
 class PolicyValueNetwork(nn.Module):
@@ -102,13 +120,17 @@ class PolicyValueNetwork(nn.Module):
             self.features = Network(input_size, hidden_size, num_layers=num_layers - 1, hidden_size=256)
             self.value = nn.Linear(hidden_size, 1)
             if double_value:
-                self.value2 = nn.Linear(hidden_size,1)
+                self.value2 = nn.Linear(hidden_size, 1)
             self.policy = nn.Linear(hidden_size, output_size)
         else:
-            self.value_network = ValueNetwork(input_size, hidden_size=hidden_size, num_layers=num_layers)
-            self.policy_network = PolicyNetwork(input_size, output_size, hidden_size=hidden_size, num_layers=num_layers)
-            if double_value:
-                self.value2_network = ValueNetwork(input_size, hidden_size=hidden_size, num_layers=num_layers)
+            self.value_network = ValueNetwork(input_size=input_size,
+                                              hidden_size=hidden_size,
+                                              num_layers=num_layers,
+                                              double_value=double_value)
+            self.policy_network = PolicyNetwork(input_size=input_size,
+                                                output_size=output_size,
+                                                hidden_size=hidden_size,
+                                                num_layers=num_layers)
 
     def forward(self, x: Tensor) -> Tensor:
         pass
@@ -139,13 +161,8 @@ class PolicyValueNetwork(nn.Module):
             value = self.value(features)
             if self.double_value:
                 value2 = self.value2(features)
-                return torch.minimum(value,value2)
+                return torch.minimum(value, value2)
             else:
                 return value
         else:
-            if self.double_value:
-                return torch.min(self.value_network(state),self.value2_network(state))
-            else:
-                return self.value_network.forward(state)
-
-
+            return self.value_network(state)

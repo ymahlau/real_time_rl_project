@@ -52,6 +52,7 @@ class SAC(ActorCritic):
             self.target = ValueNetwork(self.env.observation_space.shape[0] + 1,
                                        hidden_size=hidden_size,
                                        num_layers=num_layers)
+
         self.policy = PolicyNetwork(self.env.observation_space.shape[0],
                                     self.env.action_space.n,
                                     hidden_size=hidden_size,
