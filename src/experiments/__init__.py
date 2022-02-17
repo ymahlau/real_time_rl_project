@@ -9,7 +9,7 @@ from src.utils.wrapper import RTMDP
 
 def perform_experiment(algorithm: ActorCritic, setting_description: str, save_dest: str, num_steps: int = 10e6, track_rate: int = 10e3):
 
-    performances = algorithm.train(num_steps=num_steps, track_stats=True, track_rate=track_rate)
+    performances = algorithm.train(num_steps=num_steps, track_stats=True, track_rate=track_rate, progress_bar= True)
 
     f = open("{0}/{1}.csv".format(save_dest,setting_description), 'w', newline ='')
     writer = csv.writer(f)
@@ -19,6 +19,6 @@ def perform_experiment(algorithm: ActorCritic, setting_description: str, save_de
 
 
 #env = RTMDP(ConstRewardEnv(), 0)
-#eval = RTMDP(ConstRewardEnv(),0)
-#alg = RTAC(env, eval_env=eval, lr=0.01, buffer_size=10, batch_size=5)
+#eval_env = RTMDP(ConstRewardEnv(),0)
+#alg = RTAC(env, eval_env=eval_env, lr=0.01, buffer_size=10, batch_size=5)
 #perform_experiment(alg, "ganz_krasses_experiment", "./", num_steps=1000, track_rate=10)

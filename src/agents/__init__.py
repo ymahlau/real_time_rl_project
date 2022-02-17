@@ -4,6 +4,7 @@ from typing import Optional, Tuple, List, Any
 import gym
 import torch
 from torch import Tensor
+from tqdm import tqdm
 
 from src.agents.networks import PolicyValueNetwork
 from src.utils.utils import ReplayBuffer
@@ -66,10 +67,12 @@ class ActorCritic(ABC):
 
     def evaluate(self,
                  iterations: int = 100,
+                 progress_bar:bool = False,
                  ) -> float:
         return self.env_loop(
-            train = False,
-            iterations = iterations,
+            train=False,
+            iterations=iterations,
+            progress_bar=progress_bar,
         )
 
     def train(self,
@@ -78,7 +81,8 @@ class ActorCritic(ABC):
               save_dest: Optional[str] = None,
               save_rate: int = 10,
               track_stats: bool = False,
-              track_rate: int = 100
+              track_rate: int = 100,
+              progress_bar: bool=False,
               ) -> Optional[List]:
         return self.env_loop(
             train = True,
@@ -88,6 +92,7 @@ class ActorCritic(ABC):
             save_rate=save_rate,
             track_stats = track_stats,
             track_rate = track_rate,
+            progress_bar=progress_bar,
         )
 
     def env_loop(
@@ -97,9 +102,10 @@ class ActorCritic(ABC):
             iterations: int = 1,
             checkpoint: Optional[str] = None,
             save_dest: Optional[str] = None,
-            save_rate: int = 10,
+            save_rate: int = 1000, #Every how many steps the model is saved
             track_stats: bool = False,
-            track_rate: int = 100
+            track_rate: int = 100, #Every how many steps the average reward is calculated
+            progress_bar: bool = False,
     ) -> Optional[List]:
 
         if checkpoint is not None:
@@ -110,6 +116,9 @@ class ActorCritic(ABC):
                 raise ValueError("An evaluation environment has to be specified if tracking statistics.")
             if not train:
                 raise ValueError("An evaluation environment has to be specified when in evaluation mode.")
+
+        if progress_bar:
+            pbar = tqdm(total=(num_steps if train else iterations))
 
         env = self.env if train else self.eval_eval
         env_steps = 0
@@ -138,14 +147,25 @@ class ActorCritic(ABC):
                         avg = self.evaluate()
                         performances.append([env_steps, avg])
 
+                    # Save current model if necessary
+                    if save_dest is not None and env_steps % save_rate == 0:
+                        self.save_network(save_dest)
+
                     # update
                     if self.buffer.capacity_reached():
                         samples = self.buffer.sample(self.batch_size)
                         self.update(samples)
 
+                    #update progress bar
+                    if progress_bar:
+                        pbar.update(1)
+
                 env_steps += 1
 
             num_episodes += 1
+            #update progress bar
+            if progress_bar and not train:
+                pbar.update(1)
 
         if train:
             return performances if track_stats else None
