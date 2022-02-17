@@ -27,7 +27,10 @@ class SAC(ActorCritic):
             double_value: bool = False,
             hidden_size: int = 256,
             num_layers: int = 2,
-            target_smoothing_factor: float = 0.005):
+            target_smoothing_factor: float = 0.005,
+            normalized: bool = False,
+            pop_art_factor: float = 0.0003,
+    ):
         super().__init__(
             env,
             buffer_size=buffer_size,
@@ -44,15 +47,21 @@ class SAC(ActorCritic):
         self.actor_critic_factor = actor_critic_factor
         self.num_actions = self.env.action_space.n
         self.target_smoothing_factor = target_smoothing_factor
+        self.normalized = normalized
+        self.pop_art_factor = pop_art_factor
 
         # networks
         self.value = ValueNetwork(self.env.observation_space.shape[0] + self.num_actions,
                                   hidden_size=hidden_size,
-                                  num_layers=num_layers)
+                                  num_layers=num_layers,
+                                  normalized=normalized,
+                                  pop_art_factor=pop_art_factor)
         if self.use_target:
             self.target = ValueNetwork(self.env.observation_space.shape[0] + self.num_actions,
                                        hidden_size=hidden_size,
-                                       num_layers=num_layers)
+                                       num_layers=num_layers,
+                                       normalized=normalized,
+                                       pop_art_factor=pop_art_factor)
 
         self.policy = PolicyNetwork(self.env.observation_space.shape[0],
                                     self.env.action_space.n,
@@ -123,13 +132,34 @@ class SAC(ActorCritic):
                              for a in range(self.num_actions)]
 
         targets_value = torch.squeeze(torch.stack(targets_value, dim=1), dim=2).float()
+
+        if self.normalized:  # target has to be unnormalized add with new reward and compute new statistics
+            if self.use_target:
+                targets_value = self.target.unnormalize(targets_value)
+            else:
+                targets_value = self.value.unnormalize(targets_value)
+
         targets_discount = self.discount_factor * (1 - dones_expanded) * targets_value
         targets_entropy = self.entropy_scale * next_actions_dist.log()
 
         targets = torch.sum(next_actions_dist * (targets_discount - targets_entropy), 1, dtype=torch.float)
         targets = rewards + targets.unsqueeze(1).detach().float()
 
+        # update normalization parameters
+        if self.normalized:
+            self.value.update_normalization(targets)
+            if self.use_target:
+                self.target.update_normalization(targets)
+
         values = self.value(torch.cat((states, actions), dim=1)).float()
+
+        # compute normalized loss
+        if self.normalized:
+            if self.use_target:
+                values = self.target.normalize(values)
+            else:
+                values = self.value.normalize(values)
+
         return self.mse_loss(values, targets)
 
     def policy_loss(self, states: Tensor) -> Tensor:

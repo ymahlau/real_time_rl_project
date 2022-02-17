@@ -49,7 +49,7 @@ def one_hot_encoding(size: int, pos: int) -> np.ndarray:
     one_hot[pos] = 1
     return one_hot
 
-
+@torch.no_grad()
 def evaluate_policy(policy: Callable, env: gym.Env, trials: int = 10, rtmdp_ob: bool = True) -> float:
     cum_rew = 0
     for _ in range(trials):

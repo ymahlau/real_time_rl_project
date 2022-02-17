@@ -1,3 +1,7 @@
+import math
+from typing import Tuple
+
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -75,10 +79,28 @@ class PolicyNetwork(Network):
 
 class ValueNetwork(nn.Module):
 
-    def __init__(self, input_size: int, hidden_size: int = 256, num_layers: int = 2, double_value: bool = False):
+    def __init__(
+            self,
+            input_size: int,
+            hidden_size: int = 256,
+            num_layers: int = 2,
+            double_value: bool = False,
+            normalized: bool = False,
+            pop_art_factor: float = 0.0003,
+            epsilon: float = 1e-5  # for numerical stability, not given in rtac-paper
+    ):
         super().__init__()
-        self.double_value = double_value
 
+        if pop_art_factor < 0 or pop_art_factor > 1:
+            raise ValueError(f'pop_art_factor factor has to be in [0, 1], but got: {pop_art_factor}')
+
+        # flags and scalars
+        self.double_value = double_value
+        self.normalized = normalized
+        self.pop_art_factor = pop_art_factor
+        self.epsilon = epsilon
+
+        # networks
         self.value = Network(input_size=input_size,
                              output_size=1,
                              hidden_size=hidden_size,
@@ -89,11 +111,55 @@ class ValueNetwork(nn.Module):
                                   hidden_size=hidden_size,
                                   num_layers=num_layers)
 
+        # normalization parameter (updatable)
+        self.norm_layer = nn.Linear(1, 1)
+        self.scale: float = 1  # mu (mean)
+        self.shift: float = 0  # sigma (std)
+        self.second_moment: float = 1 + self.epsilon  # nu
+
     def forward(self, x: Tensor) -> Tensor:
         if self.double_value:
-            return torch.minimum(self.value(x), self.value2(x))
+            value = torch.minimum(self.value(x), self.value2(x))
         else:
-            return self.value(x)
+            value = self.value(x)
+
+        if self.normalized:
+            value = self.norm_layer(value)
+
+        return value
+
+    def unnormalize(self, value: Tensor) -> Tensor:
+        if not self.normalized:
+            raise AttributeError('Cannot unnormalize if network is not normalized')
+        new_value = value * self.scale + self.shift
+        return new_value
+
+    def normalize(self, value: Tensor) -> Tensor:
+        if not self.normalized:
+            raise AttributeError('Cannot normalize if network is not normalized')
+        new_value = (value - self.shift) / self.scale
+        return new_value
+
+    @torch.no_grad()
+    def update_normalization(self, new_values: Tensor):
+        if not self.normalized:
+            raise AttributeError('Cannot update normalization if normalization is False')
+
+        # save old values
+        old_shift = self.shift
+        old_scale = self.scale
+
+        # first update normalization parameters (exponentially moving avg)
+        mean_estimate = torch.mean(new_values).item()
+        square_estimate = torch.mean(torch.pow(new_values, 2)).item()
+        self.second_moment = (1 - self.pop_art_factor) * self.scale + self.pop_art_factor * square_estimate
+        self.shift = (1 - self.pop_art_factor) * self.shift + self.pop_art_factor * mean_estimate
+        diff = np.maximum(self.epsilon, (self.second_moment - np.power(self.shift, 2)))
+        self.scale = np.sqrt(diff).item()
+
+        # then update weights of norm layer
+        self.norm_layer.weight.data = (old_scale / self.scale) * self.norm_layer.weight
+        self.norm_layer.bias.data = (self.scale * self.norm_layer.bias + old_shift - self.shift) / self.scale
 
 
 class PolicyValueNetwork(nn.Module):

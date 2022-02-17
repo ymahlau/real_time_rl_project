@@ -97,3 +97,13 @@ class TestSAC(unittest.TestCase):
         self.assertAlmostEqual(2, sac.get_value(([1], 0)).item(), delta=delta)
         self.assertAlmostEqual(1, sac.get_value(([2], 1)).item(), delta=delta)
         self.assertAlmostEqual(1, sac.get_value(([3], 0)).item(), delta=delta)
+
+    def test_normalization_simple(self):
+        places = 3
+        env = ConstRewardEnv()
+        sac = SAC(env, entropy_scale=0.2, lr=0.01, buffer_size=1, batch_size=1, hidden_size=256, num_layers=2,
+                  normalized=True, pop_art_factor=0.01)
+        sac.train(num_steps=1000)
+        normalized_value = sac.get_value(([0], 0))
+        unnormalized_value = sac.value.normalize(normalized_value)
+        self.assertAlmostEqual(1, sac.get_value(([0], 0)).item(), places=places)
