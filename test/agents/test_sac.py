@@ -32,11 +32,12 @@ class TestSAC(unittest.TestCase):
 
         # Check if optimal policy can be adopted
         env = TwoActionsTwoStates()
-        sac = SAC(env, entropy_scale=0.2, discount_factor=1, lr=0.01, buffer_size=100, batch_size=20,
+        eval_env = TwoActionsTwoStates()
+        sac = SAC(env, eval_env=eval_env, entropy_scale=0.2, discount_factor=1, lr=0.01, buffer_size=100, batch_size=20,
                   hidden_size=256, num_layers=2)
         sac.train(num_steps=4000)
 
-        avg = evaluate_policy(sac.policy.act, env, trials=1000, rtmdp_ob=False)
+        avg = sac.evaluate()
         self.assertAlmostEqual(2, avg, delta=delta)
         self.assertAlmostEqual(2, sac.get_value(([0], 0)).item(), delta=delta)
         self.assertAlmostEqual(2, sac.get_value(([1], 0)).item(), delta=delta)
@@ -46,10 +47,11 @@ class TestSAC(unittest.TestCase):
     def test_entropy(self):
         # Check if random policy is adopted when entropy is valued extremely highly
         env = TwoActionsTwoStates()
-        sac = SAC(env, entropy_scale=10, discount_factor=1, lr=0.03, buffer_size=200, batch_size=16,
+        eval_env = TwoActionsTwoStates()
+        sac = SAC(env, eval_env=eval_env, entropy_scale=10, discount_factor=1, lr=0.03, buffer_size=200, batch_size=16,
                   hidden_size=256, num_layers=2)
         sac.train(num_steps=4000)
-        avg = evaluate_policy(sac.policy.act, env, trials=1000, rtmdp_ob=False)
+        avg = sac.evaluate()
 
         self.assertAlmostEqual(1.5, avg, delta=0.3)
         self.assertAlmostEqual(2 * 10 * math.log(2, math.e), sac.get_value(([0], 1)).item(), delta=10)
@@ -71,11 +73,12 @@ class TestSAC(unittest.TestCase):
 
         # Check if optimal policy can be adopted
         env = TwoActionsTwoStates()
-        sac = SAC(env, entropy_scale=0.2, discount_factor=1, lr=0.01, buffer_size=100, batch_size=20,
+        eval_env = TwoActionsTwoStates()
+        sac = SAC(env, eval_env=eval_env, entropy_scale=0.2, discount_factor=1, lr=0.01, buffer_size=100, batch_size=20,
                   hidden_size=256, num_layers=2, use_target=True)
         sac.train(num_steps=4000)
 
-        avg = evaluate_policy(sac.policy.act, env, trials=1000, rtmdp_ob=False)
+        avg = sac.evaluate()
         self.assertAlmostEqual(2, avg, delta=delta)
         self.assertAlmostEqual(2, sac.get_value(([0], 0)).item(), delta=delta)
         self.assertAlmostEqual(2, sac.get_value(([1], 0)).item(), delta=delta)
@@ -87,11 +90,12 @@ class TestSAC(unittest.TestCase):
 
         # Check if optimal policy can be adopted
         env = TwoActionsTwoStates()
-        sac = SAC(env, entropy_scale=0.2, discount_factor=1, lr=0.01, buffer_size=100, batch_size=20,
+        eval_env = TwoActionsTwoStates()
+        sac = SAC(env, eval_env = eval_env, entropy_scale=0.2, discount_factor=1, lr=0.01, buffer_size=100, batch_size=20,
                   hidden_size=256, num_layers=2, double_value=True)
         sac.train(num_steps=4000)
 
-        avg = evaluate_policy(sac.policy.act, env, trials=1000, rtmdp_ob=False)
+        avg = sac.evaluate()
         self.assertAlmostEqual(2, avg, delta=delta)
         self.assertAlmostEqual(2, sac.get_value(([0], 0)).item(), delta=delta)
         self.assertAlmostEqual(2, sac.get_value(([1], 0)).item(), delta=delta)

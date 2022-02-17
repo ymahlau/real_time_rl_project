@@ -48,18 +48,3 @@ def one_hot_encoding(size: int, pos: int) -> np.ndarray:
     one_hot = np.zeros(size)
     one_hot[pos] = 1
     return one_hot
-
-@torch.no_grad()
-def evaluate_policy(policy: Callable, env: gym.Env, trials: int = 10, rtmdp_ob: bool = True) -> float:
-    cum_rew = 0
-    for _ in range(trials):
-        state = env.reset()
-        done = False
-        while not done:
-            if rtmdp_ob:
-                state = flatten_rtmdp_obs(state, env.action_space.n)
-            action = policy(state)
-            state, reward, done, _ = env.step(action)
-            cum_rew += reward
-
-    return cum_rew / trials

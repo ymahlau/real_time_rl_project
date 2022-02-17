@@ -1,4 +1,4 @@
-from typing import Tuple, Any, List
+from typing import Tuple, Any, List, Optional
 
 import gym
 import torch
@@ -16,6 +16,7 @@ class RTAC(ActorCritic):
     def __init__(
             self,
             env: gym.Env,
+            eval_env: Optional[gym.Env] = None,
             entropy_scale: float = 0.2,
             discount_factor: float = 0.99,
             reward_scaling_factor: float = 1.0,
@@ -38,6 +39,7 @@ class RTAC(ActorCritic):
 
         super().__init__(
             env,
+            eval_env=eval_env,
             use_target=use_target,
             batch_size=batch_size,
             buffer_size=buffer_size,

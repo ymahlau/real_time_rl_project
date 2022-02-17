@@ -1,5 +1,5 @@
 from functools import partial
-from typing import List, Tuple, Any
+from typing import List, Tuple, Any, Optional
 
 import gym
 import torch
@@ -16,6 +16,7 @@ class SAC(ActorCritic):
     def __init__(
             self,
             env: gym.Env,
+            eval_env: Optional[gym.Env] = None,
             entropy_scale: float = 0.2,
             discount_factor: float = 0.99,
             reward_scaling_factor: float = 1.0,
@@ -33,6 +34,7 @@ class SAC(ActorCritic):
     ):
         super().__init__(
             env,
+            eval_env = eval_env,
             buffer_size=buffer_size,
             use_target=use_target,
             double_value=double_value,
