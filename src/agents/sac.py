@@ -126,6 +126,7 @@ class SAC(ActorCritic):
         next_actions_dist = self.policy.get_action_distribution(next_states)
         next_actions = [torch.tensor(self.one_hot(a)) for a in range(self.num_actions)]
 
+        # prediction of target q-values
         if self.use_target:
             targets_value = [self.target(torch.cat((next_states, next_actions[a].expand(self.batch_size, -1)), dim=1))
                              for a in range(self.num_actions)]
@@ -135,16 +136,18 @@ class SAC(ActorCritic):
 
         targets_value = torch.squeeze(torch.stack(targets_value, dim=1), dim=2).float()
 
-        if self.normalized:  # target has to be unnormalized add with new reward and compute new statistics
+        # target has to be unnormalized to add to new reward and compute new statistics
+        if self.normalized:
             if self.use_target:
                 targets_value = self.target.unnormalize(targets_value)
             else:
                 targets_value = self.value.unnormalize(targets_value)
 
+        # compute new targets
         targets_discount = self.discount_factor * (1 - dones_expanded) * targets_value
         targets_entropy = self.entropy_scale * next_actions_dist.log()
 
-        targets = torch.sum(next_actions_dist * (targets_discount - targets_entropy), 1, dtype=torch.float)
+        targets = torch.sum(next_actions_dist * (targets_discount - targets_entropy), dim=1, dtype=torch.float)
         targets = rewards + targets.unsqueeze(1).detach().float()
 
         # update normalization parameters
@@ -153,26 +156,34 @@ class SAC(ActorCritic):
             if self.use_target:
                 self.target.update_normalization(targets)
 
-        values = self.value(torch.cat((states, actions), dim=1)).float()
-
         # compute normalized loss
         if self.normalized:
             if self.use_target:
-                values = self.target.normalize(values)
+                norm_target = self.target.normalize(targets)
             else:
-                values = self.value.normalize(values)
+                norm_target = self.value.normalize(targets)
+            targets = norm_target.detach().float()
 
-        return self.mse_loss(values, targets)
+        values = self.value(torch.cat((states, actions), dim=1)).float()
+
+        loss = self.mse_loss(values, targets)
+        return loss
 
     def policy_loss(self, states: Tensor) -> Tensor:
         next_actions_dist = self.policy.get_action_distribution(states)
         values = [self.value(torch.cat((states, torch.tensor(self.one_hot(a)).expand(self.batch_size, -1)), dim=1))
                   for a in range(self.num_actions)]
         values = torch.squeeze(torch.stack(values, dim=1), dim=2).detach()
+        if self.normalized:
+            values = self.value.unnormalize(values)
 
         kl_div_term = next_actions_dist.log() - self.discount_factor * (1 / self.entropy_scale) * values
-        policy_loss = torch.sum(next_actions_dist * kl_div_term, dim=1).mean()
-        return policy_loss
+        policy_loss = torch.sum(next_actions_dist * kl_div_term, dim=1)
+        if self.normalized:
+            policy_loss = self.value.normalize(policy_loss)
+
+        loss = policy_loss.mean()
+        return loss
 
     def update(self, samples: List[Tuple[Any, int, float, Any, bool]]):
         state_batch = torch.tensor([s[0] for s in samples]).float()

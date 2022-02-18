@@ -87,7 +87,7 @@ class ValueNetwork(nn.Module):
             double_value: bool = False,
             normalized: bool = False,
             pop_art_factor: float = 0.0003,
-            epsilon: float = 1e-5  # for numerical stability, not given in rtac-paper
+            epsilon: float = 1e-6  # for numerical stability, not given in rtac-paper
     ):
         super().__init__()
 
@@ -113,9 +113,11 @@ class ValueNetwork(nn.Module):
 
         # normalization parameter (updatable)
         self.norm_layer = nn.Linear(1, 1)
+        self.norm_layer.weight.data = torch.tensor([[1]]).float()
+        self.norm_layer.bias.data = torch.tensor([0]).float()
         self.scale: float = 1  # mu (mean)
         self.shift: float = 0  # sigma (std)
-        self.second_moment: float = 1 + self.epsilon  # nu
+        self.second_moment: float = 1  # nu
 
     def forward(self, x: Tensor) -> Tensor:
         if self.double_value:
@@ -148,11 +150,12 @@ class ValueNetwork(nn.Module):
         # save old values
         old_shift = self.shift
         old_scale = self.scale
+        old_second_moment = self.second_moment
 
         # first update normalization parameters (exponentially moving avg)
         mean_estimate = torch.mean(new_values).item()
         square_estimate = torch.mean(torch.pow(new_values, 2)).item()
-        self.second_moment = (1 - self.pop_art_factor) * self.scale + self.pop_art_factor * square_estimate
+        self.second_moment = (1 - self.pop_art_factor) * self.second_moment + self.pop_art_factor * square_estimate
         self.shift = (1 - self.pop_art_factor) * self.shift + self.pop_art_factor * mean_estimate
         diff = np.maximum(self.epsilon, (self.second_moment - np.power(self.shift, 2)))
         self.scale = np.sqrt(diff).item()

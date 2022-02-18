@@ -6,7 +6,6 @@ import numpy as np
 
 from src.agents.sac import SAC
 from src.envs.probe_envs import ConstRewardEnv, PredictableRewardEnv, TwoActionsTwoStates
-from src.utils.utils import evaluate_policy
 import torch
 
 
@@ -103,11 +102,34 @@ class TestSAC(unittest.TestCase):
         self.assertAlmostEqual(1, sac.get_value(([3], 0)).item(), delta=delta)
 
     def test_normalization_simple(self):
-        places = 3
         env = ConstRewardEnv()
-        sac = SAC(env, entropy_scale=0.2, lr=0.01, buffer_size=1, batch_size=1, hidden_size=256, num_layers=2,
-                  normalized=True, pop_art_factor=0.01)
-        sac.train(num_steps=1000)
+        sac = SAC(env, entropy_scale=1, lr=0.01, buffer_size=1, batch_size=1, hidden_size=256, num_layers=2,
+                  normalized=True, pop_art_factor=0.5)
+        sac.train(num_steps=5000)
         normalized_value = sac.get_value(([0], 0))
-        unnormalized_value = sac.value.normalize(normalized_value)
-        self.assertAlmostEqual(1, sac.get_value(([0], 0)).item(), places=places)
+        unnormalized_value = sac.value.unnormalize(normalized_value)
+        self.assertAlmostEqual(0, normalized_value.item(), places=2)
+        self.assertAlmostEqual(1, unnormalized_value.item(), places=2)
+
+        self.assertAlmostEqual(0, sac.value.scale, places=2)
+        self.assertAlmostEqual(1, sac.value.shift, places=4)
+
+    def test_normalization_two_states(self):
+        delta = 0.1
+        env = PredictableRewardEnv()
+        sac = SAC(env, entropy_scale=0.2, lr=0.01, buffer_size=100, batch_size=100, hidden_size=256, num_layers=2,
+                  normalized=True, pop_art_factor=0.1)
+        sac.train(num_steps=10000)
+
+        normalized_value_pos = sac.get_value(([1], 0))
+        unnormalized_value_pos = sac.value.unnormalize(normalized_value_pos)
+        normalized_value_neg = sac.get_value(([-1], 0))
+        unnormalized_value_neg = sac.value.unnormalize(normalized_value_neg)
+
+        self.assertAlmostEqual(1, normalized_value_pos.item(), delta=delta)
+        self.assertAlmostEqual(1, unnormalized_value_pos.item(), places=3)
+        self.assertAlmostEqual(-1, normalized_value_neg.item(), delta=delta)
+        self.assertAlmostEqual(-1, unnormalized_value_neg.item(), places=3)
+
+        self.assertAlmostEqual(1, sac.value.scale, delta=delta)
+        self.assertAlmostEqual(0, sac.value.shift, delta=delta)
