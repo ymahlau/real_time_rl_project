@@ -122,13 +122,16 @@ class ActorCritic(ABC):
         if progress_bar:
             pbar = tqdm(total=(num_steps if train else iterations))
 
+        def training_ongoing():
+            return (train and env_steps < num_steps) or (not train and num_episodes < iterations)
+
         env = self.env if train else self.eval_eval
         env_steps = 0
         num_episodes = 0
         performances = []
         cum_reward = 0
 
-        while (train and env_steps < num_steps) or (not train and num_episodes < iterations):
+        while training_ongoing():
 
             done = False
             state = env.reset()
@@ -163,6 +166,8 @@ class ActorCritic(ABC):
                         pbar.update(1)
 
                 env_steps += 1
+                if not training_ongoing():
+                    break
 
             num_episodes += 1
             #update progress bar
