@@ -162,6 +162,10 @@ class PolicyValueNetwork(nn.Module):
             value2 = self.value2(feature_vals)
             value_result = torch.minimum(value_result, value2)
 
+        # normalization
+        if self.normalized:
+            value_result = self.norm_layer(value_result)
+
         return value_result
 
     def unnormalize(self, value: Tensor) -> Tensor:
@@ -182,8 +186,8 @@ class PolicyValueNetwork(nn.Module):
             raise AttributeError('Cannot update normalization if normalization is False')
 
         # save old values
-        old_shift = self.shift
-        old_scale = self.scale
+        old_shift = self.shift.data
+        old_scale = self.scale.data
 
         # first update normalization parameters (exponentially moving avg)
         mean_estimate = torch.mean(new_values)

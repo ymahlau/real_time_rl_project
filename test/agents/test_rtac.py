@@ -52,5 +52,39 @@ class TestRTAC(unittest.TestCase):
         avg = rtac.evaluate()
 
         self.assertAlmostEqual(1.5, avg, delta=0.2)
-        self.assertAlmostEqual(2 * 100 * math.log(2, math.e), rtac.get_value(([0], 0)).item(), delta=20)
-        self.assertAlmostEqual(1 * 100 * math.log(2, math.e), rtac.get_value(([3], 0)).item(), delta=20)
+        self.assertAlmostEqual(2 * 100 * math.log(2, math.e), rtac.get_value(([0], 0)).item(), delta=30)
+        self.assertAlmostEqual(1 * 100 * math.log(2, math.e), rtac.get_value(([3], 0)).item(), delta=30)
+
+    def test_normalization_simple(self):
+        env = RTMDP(ConstRewardEnv(), initial_action=0)
+        rtac = RTAC(env, entropy_scale=1, lr=0.01, buffer_size=1, batch_size=1, hidden_size=256, num_layers=2,
+                    normalized=True, pop_art_factor=0.5)
+
+        rtac.train(num_steps=5000)
+        normalized_value = rtac.get_value(([0], 0))
+        unnormalized_value = rtac.network.unnormalize(normalized_value)
+        self.assertAlmostEqual(0, normalized_value.item(), places=2)
+        self.assertAlmostEqual(1, unnormalized_value.item(), places=4)
+
+        self.assertAlmostEqual(0.001, rtac.network.scale.data.item(), places=4)
+        self.assertAlmostEqual(1, rtac.network.shift.data.item(), places=4)
+
+    def test_normalization_two_states(self):
+        delta = 0.2
+        env = RTMDP(PredictableRewardEnv(), initial_action=0)
+        rtac = RTAC(env, entropy_scale=0.2, lr=0.01, buffer_size=100, batch_size=100, hidden_size=256, num_layers=2,
+                    normalized=True, pop_art_factor=0.1)
+        rtac.train(num_steps=5000)
+
+        normalized_value_pos = rtac.get_value(([1], 0))
+        unnormalized_value_pos = rtac.network.unnormalize(normalized_value_pos)
+        normalized_value_neg = rtac.get_value(([-1], 0))
+        unnormalized_value_neg = rtac.network.unnormalize(normalized_value_neg)
+
+        self.assertAlmostEqual(1, normalized_value_pos.item(), delta=delta)
+        self.assertAlmostEqual(1, unnormalized_value_pos.item(), places=2)
+        self.assertAlmostEqual(-1, normalized_value_neg.item(), delta=delta)
+        self.assertAlmostEqual(-1, unnormalized_value_neg.item(), places=2)
+
+        self.assertAlmostEqual(1, rtac.network.scale.data.item(), delta=delta)
+        self.assertAlmostEqual(0, rtac.network.shift.data.item(), delta=delta)

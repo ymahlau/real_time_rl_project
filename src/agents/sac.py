@@ -85,7 +85,6 @@ class SAC(ActorCritic):
 
         # optimizer
         self.optimizer = torch.optim.Adam(self.network.parameters(), lr=self.lr)
-        # self.policy_optim = torch.optim.Adam(self.policy.parameters(), lr=self.lr * actor_critic_factor)
 
         # functions
         self.mse_loss = nn.MSELoss()
@@ -99,7 +98,6 @@ class SAC(ActorCritic):
             checkpoint: Absolute path without ending to the two files the model is saved in.
         """
         self.network.load_state_dict(torch.load(f"{checkpoint}.model"))
-        # self.value.load_state_dict(torch.load(f"{checkpoint}.val_model"))
         if self.use_target:
             self.target.load_state_dict(torch.load(f"{checkpoint}.model"))
         print(f"Continuing training on {checkpoint}.")
@@ -167,8 +165,8 @@ class SAC(ActorCritic):
         # update normalization parameters
         if self.normalized:
             self.network.update_normalization(targets)
-            if self.use_target:
-                self.target.update_normalization(targets)
+            # if self.use_target:  TODO: do we update target statistics?
+            #     self.target.update_normalization(targets)
 
         # compute normalized loss
         if self.normalized:
@@ -186,9 +184,9 @@ class SAC(ActorCritic):
     def policy_loss(self, states: Tensor) -> Tensor:
         next_actions_dist = self.network.get_action_distribution(states)
         values = [self.network.get_value(torch.cat((states, torch.tensor(self.one_hot(a)).expand(self.batch_size, -1)), dim=1))
-                  for a in range(self.num_actions)]
+                  for a in range(self.num_actions)]  # TODO: do we need the target network here?
         values = torch.squeeze(torch.stack(values, dim=1), dim=2).detach()
-        if self.normalized:
+        if self.normalized:  # TODO: do we need the target network here?
             values = self.network.unnormalize(values)
 
         kl_div_term = next_actions_dist.log() - self.discount_factor * (1 / self.entropy_scale) * values

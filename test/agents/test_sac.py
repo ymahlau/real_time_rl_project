@@ -108,9 +108,9 @@ class TestSAC(unittest.TestCase):
         normalized_value = sac.get_value(([0], 0))
         unnormalized_value = sac.network.unnormalize(normalized_value)
         self.assertAlmostEqual(0, normalized_value.item(), places=2)
-        self.assertAlmostEqual(1, unnormalized_value.item(), places=2)
+        self.assertAlmostEqual(1, unnormalized_value.item(), places=4)
 
-        self.assertAlmostEqual(0, sac.network.scale.data.item(), places=2)
+        self.assertAlmostEqual(0.001, sac.network.scale.data.item(), places=4)
         self.assertAlmostEqual(1, sac.network.shift.data.item(), places=4)
 
     def test_normalization_two_states(self):
@@ -126,9 +126,9 @@ class TestSAC(unittest.TestCase):
         unnormalized_value_neg = sac.network.unnormalize(normalized_value_neg)
 
         self.assertAlmostEqual(1, normalized_value_pos.item(), delta=delta)
-        self.assertAlmostEqual(1, unnormalized_value_pos.item(), places=1)
+        self.assertAlmostEqual(1, unnormalized_value_pos.item(), places=2)
         self.assertAlmostEqual(-1, normalized_value_neg.item(), delta=delta)
-        self.assertAlmostEqual(-1, unnormalized_value_neg.item(), places=1)
+        self.assertAlmostEqual(-1, unnormalized_value_neg.item(), places=2)
 
         self.assertAlmostEqual(1, sac.network.scale.data.item(), delta=delta)
         self.assertAlmostEqual(0, sac.network.shift.data.item(), delta=delta)

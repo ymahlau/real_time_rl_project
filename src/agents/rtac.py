@@ -32,10 +32,12 @@ class RTAC(ActorCritic):
             normalized: bool = False,
             pop_art_factor: float = 0.0003,
             shared_parameters: bool = False,
+            epsilon: float = 1e-6  # for numerical stability, not given in rtac-paper
     ):
 
         if not isinstance(env.observation_space, gym.spaces.Tuple) or len(env.observation_space) != 2:
             raise ValueError('RTAC needs a tuple with two entries as observations space in the given environment')
+
         if not isinstance(env.observation_space[1], gym.spaces.Discrete) \
                 or not isinstance(env.action_space, gym.spaces.Discrete):
             raise ValueError('RTAC needs discrete action space (as output and second entry in input tuple)')
@@ -43,29 +45,53 @@ class RTAC(ActorCritic):
         super().__init__(
             env,
             eval_env=eval_env,
-            use_target=use_target,
-            batch_size=batch_size,
             buffer_size=buffer_size,
-            discount_factor=discount_factor,
+            use_target=use_target,
             double_value=double_value,
+            normalized=normalized,
+            batch_size=batch_size,
+            discount_factor=discount_factor,
             reward_scaling_factor=reward_scaling_factor,
         )
 
         # Scalar attributes
         self.entropy_scale = entropy_scale
+        self.lr = lr
         self.actor_critic_factor = actor_critic_factor
         self.target_smoothing_factor = target_smoothing_factor
-        self.num_obs = len(env.observation_space[0].shape)
         self.normalized = normalized
         self.pop_art_factor = pop_art_factor
 
-        # networks
+        self.num_obs = env.observation_space[0].shape[0]
         self.input_size = env.observation_space[0].shape[0] + env.observation_space[1].n
-        self.network = PolicyValueNetwork(self.input_size, self.num_actions, num_layers=num_layers,
-                                          hidden_size=hidden_size, shared_parameters=shared_parameters, double_value = self.double_value)
+
+        # networks
+        self.network = PolicyValueNetwork(
+            self.input_size,
+            self.input_size,
+            self.num_actions,
+            shared_parameters=shared_parameters,
+            double_value=double_value,
+            hidden_size=hidden_size,
+            num_layers=num_layers,
+            normalized=normalized,
+            pop_art_factor=pop_art_factor,
+            epsilon=epsilon
+        )
+
         if use_target:
-            self.target_network = PolicyValueNetwork(self.input_size, self.num_actions, num_layers=num_layers,
-                                                     hidden_size=hidden_size, shared_parameters=shared_parameters, double_value = self.double_value)
+            self.target = PolicyValueNetwork(
+                self.input_size,
+                self.input_size,
+                self.num_actions,
+                shared_parameters=shared_parameters,
+                double_value=double_value,
+                hidden_size=hidden_size,
+                num_layers=num_layers,
+                normalized=normalized,
+                pop_art_factor=pop_art_factor,
+                epsilon=epsilon
+            )
 
         # optimizer and loss
         self.optim = optim.Adam(self.network.parameters(), lr=lr)
@@ -80,7 +106,7 @@ class RTAC(ActorCritic):
         """
         self.network.load_state_dict(torch.load(f"{checkpoint}.model"))
         if self.use_target:
-            self.target_network.load_state_dict(torch.load(f"{checkpoint}.model"))
+            self.target.load_state_dict(torch.load(f"{checkpoint}.model"))
         print(f"Continuing training on {checkpoint}.")
 
     def save_network(self, log_dest: str):
@@ -128,7 +154,6 @@ class RTAC(ActorCritic):
 
         # states x_t = (s_t, a_t), obs is the concatenated state and value
         current_obs = torch.stack([self.flatten_observation(samples[i][0]) for i in range(self.batch_size)], dim=0)
-        current_state, current_action = self.split_states(current_obs)  # s_t, a_t
         dist_current_obs = self.network.get_action_distribution(current_obs)  # pi(a | s_t, a_t)
 
         # reward tensor
@@ -151,31 +176,54 @@ class RTAC(ActorCritic):
         flattened = torch.flatten(next_obs_all_actions, start_dim=0, end_dim=1)  # (batch * act, num_states + num_act)
 
         if self.use_target:
-            values_flattened = self.target_network.get_value(flattened)  # v(s_t+1, a_t)
+            values_flattened = self.target.get_value(flattened)  # v(s_t+1, a_t)
         else:
             values_flattened = self.network.get_value(flattened)
         values_unflattened = values_flattened.reshape(self.batch_size, self.num_actions)
+
+        # target has to be unnormalized to add to new reward and compute new statistics
+        if self.normalized:
+            if self.use_target:
+                values_unflattened = self.target.unnormalize(values_unflattened)
+            else:
+                values_unflattened = self.network.unnormalize(values_unflattened)
 
         # expectation of next state values
         value_expectation = (1 - dones_expanded) * self.discount_factor * values_unflattened
         value_expectation -= self.entropy_scale * dist_current_obs.log()
         value_expectation = torch.sum(dist_current_obs * value_expectation, dim=1)
-
-        if self.use_target:
-            values = self.target_network.get_value(current_obs)  # v(s_t, a_t)
-        else:
-            values = self.network.get_value(current_obs)
-
         targets = (rewards + value_expectation).detach().float()
-        value_loss = self.mse_loss(values.squeeze(dim=1), targets)
+
+        # update normalization parameters
+        if self.normalized:
+            self.network.update_normalization(targets)
+
+        # compute normalized targets
+        if self.normalized:
+            if self.use_target:
+                norm_target = self.target.normalize(targets)
+            else:
+                norm_target = self.network.normalize(targets)
+            targets = norm_target.detach().float()
+
+        # get (normalized) values
+        values = self.network.get_value(current_obs).squeeze(dim=1)
+
+        value_loss = self.mse_loss(values, targets)
 
         # compute policy loss
-        value_next_obs = self.network.get_value(flattened).reshape(self.batch_size, self.num_actions)
+        value_next_obs = self.network.get_value(flattened).reshape(self.batch_size, self.num_actions)  # TODO: target network?
+
+        if self.normalized:  # TODO: do we need the target network here?
+            value_next_obs = self.network.unnormalize(value_next_obs)
 
         critic_approx = (1 - dones_expanded) * self.discount_factor * (1 / self.entropy_scale)
         critic_approx = (critic_approx * value_next_obs).detach()
 
         kl_div = torch.sum(dist_current_obs * (dist_current_obs.log() - critic_approx), dim=1)
+        if self.normalized:
+            kl_div = self.network.normalize(kl_div)
+
         policy_loss = kl_div.mean()
 
         # Update parameters
@@ -184,5 +232,5 @@ class RTAC(ActorCritic):
         self.optim.step()
 
         if self.use_target:
-            moving_average(self.target_network.parameters(), self.network.parameters(),
+            moving_average(self.target.parameters(), self.network.parameters(),
                            self.target_smoothing_factor)
