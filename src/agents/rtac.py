@@ -29,7 +29,10 @@ class RTAC(ActorCritic):
             hidden_size: int = 256,
             num_layers: int = 2,
             target_smoothing_factor: float = 0.005,
-            shared_parameters: bool = False):
+            normalized: bool = False,
+            pop_art_factor: float = 0.0003,
+            shared_parameters: bool = False,
+    ):
 
         if not isinstance(env.observation_space, gym.spaces.Tuple) or len(env.observation_space) != 2:
             raise ValueError('RTAC needs a tuple with two entries as observations space in the given environment')
@@ -44,8 +47,8 @@ class RTAC(ActorCritic):
             batch_size=batch_size,
             buffer_size=buffer_size,
             discount_factor=discount_factor,
-            double_value = double_value,
-            reward_scaling_factor = reward_scaling_factor,
+            double_value=double_value,
+            reward_scaling_factor=reward_scaling_factor,
         )
 
         # Scalar attributes
@@ -53,6 +56,8 @@ class RTAC(ActorCritic):
         self.actor_critic_factor = actor_critic_factor
         self.target_smoothing_factor = target_smoothing_factor
         self.num_obs = len(env.observation_space[0].shape)
+        self.normalized = normalized
+        self.pop_art_factor = pop_art_factor
 
         # networks
         self.input_size = env.observation_space[0].shape[0] + env.observation_space[1].n
@@ -147,16 +152,19 @@ class RTAC(ActorCritic):
 
         if self.use_target:
             values_flattened = self.target_network.get_value(flattened)  # v(s_t+1, a_t)
-            values = self.target_network.get_value(current_obs)  # v(s_t, a_t)
         else:
             values_flattened = self.network.get_value(flattened)
-            values = self.network.get_value(current_obs)
         values_unflattened = values_flattened.reshape(self.batch_size, self.num_actions)
 
         # expectation of next state values
         value_expectation = (1 - dones_expanded) * self.discount_factor * values_unflattened
         value_expectation -= self.entropy_scale * dist_current_obs.log()
         value_expectation = torch.sum(dist_current_obs * value_expectation, dim=1)
+
+        if self.use_target:
+            values = self.target_network.get_value(current_obs)  # v(s_t, a_t)
+        else:
+            values = self.network.get_value(current_obs)
 
         targets = (rewards + value_expectation).detach().float()
         value_loss = self.mse_loss(values.squeeze(dim=1), targets)

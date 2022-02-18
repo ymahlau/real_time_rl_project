@@ -17,6 +17,7 @@ class ActorCritic(ABC):
             buffer_size: int = 10000,
             use_target: bool = False,
             double_value: bool = False,
+            normalized: bool = False,
             batch_size: int = 256,
             discount_factor: float = 0.99,
             reward_scaling_factor: float = 1.0,
@@ -26,13 +27,14 @@ class ActorCritic(ABC):
             raise ValueError("Action space is not discrete!")
         self.env = env
         self.eval_eval = eval_env
-        self.num_actions = env.action_space.n
+        self.num_actions: int = env.action_space.n
         self.discount_factor = discount_factor
         self.reward_scaling_factor = reward_scaling_factor
 
         # network
         self.use_target = use_target
         self.double_value = double_value
+        self.normalized = normalized
 
         # buffer
         self.buffer_size = buffer_size
