@@ -31,7 +31,7 @@ class TestSAC(unittest.TestCase):
         env = TwoActionsTwoStates()
         eval_env = TwoActionsTwoStates()
         sac = SAC(env, eval_env=eval_env, entropy_scale=0.2, discount_factor=1, lr=0.01, buffer_size=100, batch_size=20)
-        sac.train(num_steps=4000)
+        sac.train(num_steps=10000)
 
         avg = sac.evaluate()
         self.assertAlmostEqual(2, avg, delta=delta)
@@ -130,3 +130,4 @@ class TestSAC(unittest.TestCase):
 
         self.assertAlmostEqual(1, sac.network.scale.data.item(), delta=delta)
         self.assertAlmostEqual(0, sac.network.shift.data.item(), delta=delta)
+

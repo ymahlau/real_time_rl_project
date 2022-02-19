@@ -24,6 +24,8 @@ class RTAC(ActorCritic):
             batch_size: int = 256,
             use_target: bool = False,
             target_smoothing_factor: float = 0.005,
+            use_device: bool = False,
+            seed: Optional[int] = None,
     ):
 
         if not isinstance(env.observation_space, gym.spaces.Tuple) or len(env.observation_space) != 2:
@@ -55,6 +57,8 @@ class RTAC(ActorCritic):
             lr=lr,
             actor_critic_factor=actor_critic_factor,
             target_smoothing_factor=target_smoothing_factor,
+            use_device=use_device,
+            seed=seed,
         )
 
         # Scalar attributes
@@ -79,7 +83,7 @@ class RTAC(ActorCritic):
         last_state = torch.tensor(obs[0], dtype=torch.float)
         one_hot = F.one_hot(torch.tensor(obs[1]), num_classes=self.num_actions).float()
 
-        flattened_obs = torch.cat((last_state, one_hot), dim=0)
+        flattened_obs = torch.cat((last_state, one_hot), dim=0).to(self.device)
         return flattened_obs
 
     def value_loss(self, samples: Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]) -> Tensor:

@@ -33,7 +33,7 @@ class TestRTAC(unittest.TestCase):
         env = RTMDP(TwoActionsTwoStates(), initial_action=0)
         eval_env = RTMDP(TwoActionsTwoStates(), initial_action=0)
         rtac = RTAC(env, eval_env=eval_env, lr=0.01, buffer_size=100, batch_size=10)
-        rtac.train(num_steps=4000)
+        rtac.train(num_steps=10000)
         avg = rtac.evaluate()
 
         self.assertAlmostEqual(2, avg, delta=delta)
@@ -74,7 +74,7 @@ class TestRTAC(unittest.TestCase):
         env = RTMDP(PredictableRewardEnv(), initial_action=0)
         network_kwargs = {'normalized': True, 'pop_art_factor': 0.1}
         rtac = RTAC(env, entropy_scale=0.2, lr=0.01, buffer_size=100, batch_size=100, network_kwargs=network_kwargs)
-        rtac.train(num_steps=5000)
+        rtac.train(num_steps=10000)
 
         normalized_value_pos = rtac.get_value(([1], 0))
         unnormalized_value_pos = rtac.network.unnormalize(normalized_value_pos)
@@ -88,3 +88,12 @@ class TestRTAC(unittest.TestCase):
 
         self.assertAlmostEqual(1, rtac.network.scale.data.item(), delta=delta)
         self.assertAlmostEqual(0, rtac.network.shift.data.item(), delta=delta)
+
+    def test_use_device(self):
+        env = RTMDP(ConstRewardEnv(), 0)
+        initial_state = env.reset()
+
+        rtac = RTAC(env, lr=0.01, buffer_size=10, batch_size=5, use_device=True)
+        rtac.train(num_steps=1000)
+        initial_state_approx = rtac.get_value(initial_state).item()
+        self.assertAlmostEqual(1, initial_state_approx, places=5)

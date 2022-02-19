@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 from src.agents.buffer import ReplayBuffer
 from src.agents.networks import PolicyValueNetwork
-from src.utils.utils import moving_average
+from src.utils.utils import moving_average, get_device
 
 
 class ActorCritic(ABC):
@@ -26,7 +26,11 @@ class ActorCritic(ABC):
             lr: float = 0.0003,
             actor_critic_factor: float = 0.1,
             target_smoothing_factor: float = 0.005,
+            use_device: bool = True,
+            seed: Optional[int] = None,
     ):
+        self.seed = seed
+
         # environment
         if not isinstance(env.action_space, gym.spaces.Discrete):
             raise ValueError("Action space is not discrete!")
@@ -37,25 +41,34 @@ class ActorCritic(ABC):
         self.discount_factor = discount_factor
         self.reward_scaling_factor = reward_scaling_factor
 
+        # device (cpu or cuda)
+        if use_device:
+            self.device = get_device()
+        else:
+            self.device = torch.device('cpu')
+
         # network
         self.use_target = use_target
         self.target_smoothing_factor = target_smoothing_factor
 
-        self.network = PolicyValueNetwork(**network_kwargs)
+        self.network = PolicyValueNetwork(**network_kwargs).to(self.device)
         if use_target:
-            self.target = PolicyValueNetwork(**network_kwargs)
+            self.target = PolicyValueNetwork(**network_kwargs).to(self.device)
 
         # buffer
         self.buffer_size = buffer_size
         if buffer_size < batch_size:
             raise ValueError('Buffer has to contain more item than one batch')
         self.batch_size = batch_size
-        self.buffer = ReplayBuffer(self.network.policy_input_size, capacity=buffer_size)
+        self.buffer = ReplayBuffer(self.network.policy_input_size,
+                                   capacity=buffer_size,
+                                   use_device=use_device,
+                                   seed=seed)
 
         # optimizer and loss
         self.actor_critic_factor = actor_critic_factor
         self.optim = optim.Adam(self.network.parameters(), lr=lr)
-        self.mse_loss = nn.MSELoss()
+        self.mse_loss = nn.MSELoss().to(self.device)
 
     def act(self, obs: Any) -> int:
         obs_tensor = self.obs_to_tensor(obs)
@@ -99,7 +112,7 @@ class ActorCritic(ABC):
         # shape (batch, num_act, num_states)
         state_expanded = state[:, None, :].expand(-1, self.num_actions, -1)
         # shape = (batch, num_act, num_act)
-        all_actions_expanded = torch.eye(self.num_actions)[None, :, :].expand(self.batch_size, -1, -1)
+        all_actions_expanded = torch.eye(self.num_actions)[None, :, :].expand(self.batch_size, -1, -1).to(self.device)
 
         # (batch, num_act, num_states + num_act)
         next_obs_all_actions = torch.cat((state_expanded, all_actions_expanded), dim=2)
@@ -191,6 +204,7 @@ class ActorCritic(ABC):
             if not train:
                 raise ValueError("An evaluation environment has to be specified when in evaluation mode.")
 
+        pbar = None
         if progress_bar:
             pbar = tqdm(total=(num_steps if train else iterations))
 

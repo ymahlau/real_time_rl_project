@@ -1,4 +1,3 @@
-from functools import partial
 from typing import Tuple, Any, Optional
 
 import gym
@@ -7,7 +6,6 @@ import torch.nn.functional as F
 from torch import Tensor
 
 from src.agents import ActorCritic
-from src.utils.utils import one_hot_encoding
 
 
 class SAC(ActorCritic):
@@ -25,6 +23,8 @@ class SAC(ActorCritic):
             batch_size: int = 256,
             use_target: bool = False,
             target_smoothing_factor: float = 0.005,
+            use_device: bool = True,
+            seed: Optional[int] = None,
     ):
         # arguments for network generation
         if network_kwargs is None:
@@ -45,21 +45,26 @@ class SAC(ActorCritic):
             batch_size=batch_size,
             discount_factor=discount_factor,
             reward_scaling_factor=reward_scaling_factor,
-            lr=lr
+            lr=lr,
+            actor_critic_factor=actor_critic_factor,
+            target_smoothing_factor=target_smoothing_factor,
+            use_device=use_device,
+            seed=seed,
         )
 
         self.entropy_scale = entropy_scale
-        self.actor_critic_factor = actor_critic_factor
-        self.target_smoothing_factor = target_smoothing_factor
-        self.one_hot = partial(one_hot_encoding, self.num_actions)
 
     def obs_to_tensor(self, obs: Any) -> Tensor:
-        obs_tensor = torch.tensor(obs, dtype=torch.float)
+        obs_tensor = torch.tensor(obs, dtype=torch.float).to(self.device)
         return obs_tensor
 
     def get_value(self, obs: Tuple[Any, int]) -> Tensor:
-        obs_tensor = torch.cat((torch.tensor(obs[0]), torch.tensor(self.one_hot(obs[1]))), dim=0)
-        value = self.network.get_value(obs_tensor)
+        action_tensor = torch.tensor(obs[1])
+        one_hot_action = F.one_hot(action_tensor, num_classes=self.num_actions).to(self.device)
+        obs_tensor = self.obs_to_tensor(obs[0])
+
+        concat_tensor = torch.cat((obs_tensor, one_hot_action), dim=0)
+        value = self.network.get_value(concat_tensor)
         return value
 
     def value_loss(self, samples: Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]):
@@ -70,7 +75,7 @@ class SAC(ActorCritic):
         dones = samples[4]
 
         # convert actions to one hot
-        actions_one_hot = F.one_hot(actions, num_classes=self.num_actions)
+        actions_one_hot = F.one_hot(actions, num_classes=self.num_actions).to(self.device)
 
         dones_expanded = dones[:, None].expand(-1, self.num_actions)
         next_actions_dist = self.network.get_action_distribution(next_states)
