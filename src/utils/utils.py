@@ -1,29 +1,8 @@
-import random
-from collections import deque
-from typing import Union, Any, Tuple, List, Callable
+from typing import Union, Any, List
 
-import gym
 import numpy as np
 import torch
 from torch import Tensor
-
-
-class ReplayBuffer:
-
-    def __init__(self, capacity: int):
-        self.buffer = deque(maxlen=capacity)
-
-    def __len__(self):
-        return len(self.buffer)
-
-    def add_data(self, data: Tuple[Any, int, float, Any, bool]):  # state, action, reward, next_state, done
-        self.buffer.append(data)
-
-    def capacity_reached(self):
-        return len(self.buffer) >= self.buffer.maxlen
-
-    def sample(self, sample_size: int) -> List[Tuple[Any, int, float, Any, bool]]:
-        return random.sample(self.buffer, sample_size)
 
 
 @torch.no_grad()

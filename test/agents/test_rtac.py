@@ -57,8 +57,8 @@ class TestRTAC(unittest.TestCase):
 
     def test_normalization_simple(self):
         env = RTMDP(ConstRewardEnv(), initial_action=0)
-        rtac = RTAC(env, entropy_scale=1, lr=0.01, buffer_size=1, batch_size=1, hidden_size=256, num_layers=2,
-                    normalized=True, pop_art_factor=0.5)
+        network_kwargs = {'normalized': True, 'pop_art_factor': 0.5}
+        rtac = RTAC(env, entropy_scale=1, lr=0.01, buffer_size=1, batch_size=1, network_kwargs=network_kwargs)
 
         rtac.train(num_steps=5000)
         normalized_value = rtac.get_value(([0], 0))
@@ -72,8 +72,8 @@ class TestRTAC(unittest.TestCase):
     def test_normalization_two_states(self):
         delta = 0.2
         env = RTMDP(PredictableRewardEnv(), initial_action=0)
-        rtac = RTAC(env, entropy_scale=0.2, lr=0.01, buffer_size=100, batch_size=100, hidden_size=256, num_layers=2,
-                    normalized=True, pop_art_factor=0.1)
+        network_kwargs = {'normalized': True, 'pop_art_factor': 0.1}
+        rtac = RTAC(env, entropy_scale=0.2, lr=0.01, buffer_size=100, batch_size=100, network_kwargs=network_kwargs)
         rtac.train(num_steps=5000)
 
         normalized_value_pos = rtac.get_value(([1], 0))

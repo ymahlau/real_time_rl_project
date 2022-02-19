@@ -15,6 +15,7 @@ class SAC(ActorCritic):
     def __init__(
             self,
             env: gym.Env,
+            network_kwargs: Optional[dict[str, Any]] = None,
             eval_env: Optional[gym.Env] = None,
             entropy_scale: float = 0.2,
             discount_factor: float = 0.99,
@@ -24,95 +25,110 @@ class SAC(ActorCritic):
             buffer_size: int = 10000,
             batch_size: int = 256,
             use_target: bool = False,
-            double_value: bool = False,
-            hidden_size: int = 256,
-            num_layers: int = 2,
+            # double_value: bool = False,
+            # hidden_size: int = 256,
+            # num_layers: int = 2,
             target_smoothing_factor: float = 0.005,
-            normalized: bool = False,
-            pop_art_factor: float = 0.0003,
-            epsilon: float = 1e-6  # for numerical stability, not given in rtac-paper
+            # normalized: bool = False,
+            # pop_art_factor: float = 0.0003,
+            # epsilon: float = 1e-6  # for numerical stability, not given in rtac-paper
     ):
+        # arguments for network generation
+        if network_kwargs is None:
+            network_kwargs = {}
+        network_kwargs['value_input_size'] = env.observation_space.shape[0] + env.action_space.n
+        network_kwargs['policy_input_size'] = env.observation_space.shape[0]
+        network_kwargs['output_size'] = env.action_space.n
+
+        num_obs = env.observation_space.shape[0]
+
         super().__init__(
-            env,
+            env=env,
+            num_obs=num_obs,
+            network_kwargs=network_kwargs,
             eval_env=eval_env,
             buffer_size=buffer_size,
             use_target=use_target,
-            double_value=double_value,
-            normalized=normalized,
             batch_size=batch_size,
             discount_factor=discount_factor,
             reward_scaling_factor=reward_scaling_factor,
+            lr=lr
         )
 
         # scalar
         self.entropy_scale = entropy_scale
-        self.lr = lr
+        # self.lr = lr
         self.actor_critic_factor = actor_critic_factor
         self.target_smoothing_factor = target_smoothing_factor
-        self.normalized = normalized
-        self.pop_art_factor = pop_art_factor
+        # self.normalized = normalized
+        # self.pop_art_factor = pop_art_factor
 
-        self.value_input_size = self.env.observation_space.shape[0] + self.num_actions
-        self.policy_input_size = self.env.observation_space.shape[0]
+        # self.value_input_size = self.env.observation_space.shape[0] + self.num_actions
+        # self.policy_input_size = self.env.observation_space.shape[0]
 
         # networks
-        self.network = PolicyValueNetwork(
-            self.value_input_size,
-            self.policy_input_size,
-            self.num_actions,
-            shared_parameters=False,
-            double_value=double_value,
-            hidden_size=hidden_size,
-            num_layers=num_layers,
-            normalized=normalized,
-            pop_art_factor=pop_art_factor,
-            epsilon=epsilon
-        )
-
-        if self.use_target:
-            self.target = PolicyValueNetwork(
-                self.value_input_size,
-                self.policy_input_size,
-                self.num_actions,
-                shared_parameters=False,
-                double_value=double_value,
-                hidden_size=hidden_size,
-                num_layers=num_layers,
-                normalized=normalized,
-                pop_art_factor=pop_art_factor,
-                epsilon=epsilon
-            )
-
-        # optimizer
-        self.optimizer = torch.optim.Adam(self.network.parameters(), lr=self.lr)
-
-        # functions
-        self.mse_loss = nn.MSELoss()
+        # self.network = PolicyValueNetwork(
+        #     self.value_input_size,
+        #     self.policy_input_size,
+        #     self.num_actions,
+        #     shared_parameters=False,
+        #     double_value=double_value,
+        #     hidden_size=hidden_size,
+        #     num_layers=num_layers,
+        #     normalized=normalized,
+        #     pop_art_factor=pop_art_factor,
+        #     epsilon=epsilon
+        # )
+        #
+        # if self.use_target:
+        #     self.target = PolicyValueNetwork(
+        #         self.value_input_size,
+        #         self.policy_input_size,
+        #         self.num_actions,
+        #         shared_parameters=False,
+        #         double_value=double_value,
+        #         hidden_size=hidden_size,
+        #         num_layers=num_layers,
+        #         normalized=normalized,
+        #         pop_art_factor=pop_art_factor,
+        #         epsilon=epsilon
+        #     )
+        #
+        # # optimizer
+        # self.optimizer = torch.optim.Adam(self.network.parameters(), lr=self.lr)
+        #
+        # # functions
+        # self.mse_loss = nn.MSELoss()
         self.one_hot = partial(one_hot_encoding, self.num_actions)
 
-    def load_network(self, checkpoint: str):
-        """
-            Loads the model with parameters contained in the files in the
-            path checkpoint.
+    # def load_network(self, checkpoint: str):
+    #     """
+    #         Loads the model with parameters contained in the files in the
+    #         path checkpoint.
+    #
+    #         checkpoint: Absolute path without ending to the two files the model is saved in.
+    #     """
+    #     self.network.load_state_dict(torch.load(f"{checkpoint}.model"))
+    #     if self.use_target:
+    #         self.target.load_state_dict(torch.load(f"{checkpoint}.model"))
+    #     print(f"Continuing training on {checkpoint}.")
+    #
+    # def save_network(self, log_dest: str):
+    #     """
+    #        Saves the model with parameters to the files referred to by the file path log_dest.
+    #        log_dest: Absolute path without ending to the two files the model is to be saved in.
+    #    """
+    #     torch.save(self.network.state_dict(), f"{log_dest}.pol_model")
+    #     # torch.save(self.value.state_dict(), f"{log_dest}.val_model")
+    #     print(f"Saved current training progress to {log_dest}")
 
-            checkpoint: Absolute path without ending to the two files the model is saved in.
-        """
-        self.network.load_state_dict(torch.load(f"{checkpoint}.model"))
-        if self.use_target:
-            self.target.load_state_dict(torch.load(f"{checkpoint}.model"))
-        print(f"Continuing training on {checkpoint}.")
-
-    def save_network(self, log_dest: str):
-        """
-           Saves the model with parameters to the files referred to by the file path log_dest.
-           log_dest: Absolute path without ending to the two files the model is to be saved in.
-       """
-        torch.save(self.network.state_dict(), f"{log_dest}.pol_model")
-        # torch.save(self.value.state_dict(), f"{log_dest}.val_model")
-        print(f"Saved current training progress to {log_dest}")
+    def obs_to_tensor(self, obs: Any) -> Tensor:
+        obs_tensor = torch.tensor(obs, dtype=torch.float)
+        return obs_tensor
 
     def act(self, obs: Any) -> int:
-        action = self.network.act(torch.tensor(obs))
+        obs_tensor = self.obs_to_tensor(obs)
+        action = self.network.act(obs_tensor)
         return action
 
     def get_value(self, obs: Tuple[Any, int]) -> Tensor:
@@ -121,7 +137,7 @@ class SAC(ActorCritic):
         return value
 
     def get_action_distribution(self, obs: Any) -> Tensor:
-        obs_tensor = torch.tensor(obs)
+        obs_tensor = self.obs_to_tensor(obs)
         dist = self.network.get_action_distribution(obs_tensor)
         return dist
 
@@ -149,7 +165,7 @@ class SAC(ActorCritic):
         targets_value = torch.squeeze(torch.stack(targets_value, dim=1), dim=2).float()
 
         # target has to be unnormalized to add to new reward and compute new statistics
-        if self.normalized:
+        if self.network.normalized:
             if self.use_target:
                 targets_value = self.target.unnormalize(targets_value)
             else:
@@ -163,13 +179,11 @@ class SAC(ActorCritic):
         targets = rewards + targets.unsqueeze(1).detach().float()
 
         # update normalization parameters
-        if self.normalized:
+        if self.network.normalized:
             self.network.update_normalization(targets)
-            # if self.use_target:  TODO: do we update target statistics?
-            #     self.target.update_normalization(targets)
 
         # compute normalized loss
-        if self.normalized:
+        if self.network.normalized:
             if self.use_target:
                 norm_target = self.target.normalize(targets)
             else:
@@ -186,25 +200,30 @@ class SAC(ActorCritic):
         values = [self.network.get_value(torch.cat((states, torch.tensor(self.one_hot(a)).expand(self.batch_size, -1)), dim=1))
                   for a in range(self.num_actions)]  # TODO: do we need the target network here?
         values = torch.squeeze(torch.stack(values, dim=1), dim=2).detach()
-        if self.normalized:  # TODO: do we need the target network here?
+        if self.network.normalized:  # TODO: do we need the target network here?
             values = self.network.unnormalize(values)
 
         kl_div_term = next_actions_dist.log() - self.discount_factor * (1 / self.entropy_scale) * values
         policy_loss = torch.sum(next_actions_dist * kl_div_term, dim=1)
-        if self.normalized:
+        if self.network.normalized:
             policy_loss = self.network.normalize(policy_loss)
 
         loss = policy_loss.mean()
         return loss
 
-    def update(self, samples: List[Tuple[Any, int, float, Any, bool]]):
-        state_batch = torch.tensor([s[0] for s in samples]).float()
-        action_batch = torch.tensor([self.one_hot(s[1]) for s in samples]).float()
-        reward_batch = torch.tensor([s[2] for s in samples]).unsqueeze(dim=1).float()
-        next_state_batch = torch.tensor([s[3] for s in samples]).float()
-        done_batch = torch.tensor([s[4] for s in samples], dtype=torch.float).unsqueeze(dim=1)
+    def update(self, samples: Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]):
+        # state_batch = torch.tensor([s[0] for s in samples]).float()
+        # action_batch = torch.tensor([self.one_hot(s[1]) for s in samples]).float()
+        # reward_batch = torch.tensor([s[2] for s in samples]).unsqueeze(dim=1).float()
+        # next_state_batch = torch.tensor([s[3] for s in samples]).float()
+        # done_batch = torch.tensor([s[4] for s in samples], dtype=torch.float).unsqueeze(dim=1)
+        state_batch = samples[0].float()
+        action_batch = torch.nn.functional.one_hot(samples[1].squeeze(dim=1).long()).float()
+        reward_batch = samples[2].float()
+        next_state_batch = samples[3].float()
+        done_batch = samples[4].float()
 
-        self.optimizer.zero_grad()
+        self.optim.zero_grad()
         # value_loss.backward()
         # self.value_optim.step()
 
@@ -214,7 +233,7 @@ class SAC(ActorCritic):
         loss = self.actor_critic_factor * policy_loss + value_loss
         # self.policy_optim.zero_grad()
         loss.backward()
-        self.optimizer.step()
+        self.optim.step()
 
         if self.use_target:
             moving_average(self.target.parameters(), self.network.parameters(),

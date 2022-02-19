@@ -12,14 +12,14 @@ class TestSAC(unittest.TestCase):
     def test_value_function_const_env(self):
         places = 3
         env = ConstRewardEnv()
-        sac = SAC(env, entropy_scale=0.2, lr=0.01, buffer_size=1, batch_size=1, hidden_size=256, num_layers=2)
+        sac = SAC(env, entropy_scale=0.2, lr=0.01, buffer_size=10, batch_size=5)
         sac.train(num_steps=1000)
         self.assertAlmostEqual(1, sac.get_value(([0], 0)).item(), places=places)
 
     def test_value_function_predicable_env(self):
         places = 3
         env = PredictableRewardEnv()
-        sac = SAC(env, entropy_scale=0.2, lr=0.01, buffer_size=1, batch_size=1, hidden_size=256, num_layers=2)
+        sac = SAC(env, entropy_scale=0.2, lr=0.01, buffer_size=1, batch_size=1)
         sac.train(num_steps=2000)
         self.assertAlmostEqual(1, sac.get_value(([1], 0)).item(), places=places)
         self.assertAlmostEqual(-1, sac.get_value(([-1], 0)).item(), places=places)
@@ -30,8 +30,7 @@ class TestSAC(unittest.TestCase):
         # Check if optimal policy can be adopted
         env = TwoActionsTwoStates()
         eval_env = TwoActionsTwoStates()
-        sac = SAC(env, eval_env=eval_env, entropy_scale=0.2, discount_factor=1, lr=0.01, buffer_size=100, batch_size=20,
-                  hidden_size=256, num_layers=2)
+        sac = SAC(env, eval_env=eval_env, entropy_scale=0.2, discount_factor=1, lr=0.01, buffer_size=100, batch_size=20)
         sac.train(num_steps=4000)
 
         avg = sac.evaluate()
@@ -45,8 +44,7 @@ class TestSAC(unittest.TestCase):
         # Check if random policy is adopted when entropy is valued extremely highly
         env = TwoActionsTwoStates()
         eval_env = TwoActionsTwoStates()
-        sac = SAC(env, eval_env=eval_env, entropy_scale=10, discount_factor=1, lr=0.03, buffer_size=200, batch_size=16,
-                  hidden_size=256, num_layers=2)
+        sac = SAC(env, eval_env=eval_env, entropy_scale=10, discount_factor=1, lr=0.03, buffer_size=200, batch_size=16)
         sac.train(num_steps=4000)
         avg = sac.evaluate()
 
@@ -57,8 +55,7 @@ class TestSAC(unittest.TestCase):
     def test_get_value(self):
         env = TwoActionsTwoStates()
         initial_state = env.reset()
-        sac = SAC(env, entropy_scale=10, discount_factor=1, lr=0.03, buffer_size=200, batch_size=16,
-                  hidden_size=256, num_layers=2)
+        sac = SAC(env, entropy_scale=10, discount_factor=1, lr=0.03, buffer_size=200, batch_size=16)
         value = sac.get_value((initial_state, 0))
         dist = sac.get_action_distribution(initial_state)
 
@@ -72,7 +69,7 @@ class TestSAC(unittest.TestCase):
         env = TwoActionsTwoStates()
         eval_env = TwoActionsTwoStates()
         sac = SAC(env, eval_env=eval_env, entropy_scale=0.2, discount_factor=1, lr=0.01, buffer_size=100, batch_size=20,
-                  hidden_size=256, num_layers=2, use_target=True)
+                  use_target=True)
         sac.train(num_steps=4000)
 
         avg = sac.evaluate()
@@ -88,8 +85,9 @@ class TestSAC(unittest.TestCase):
         # Check if optimal policy can be adopted
         env = TwoActionsTwoStates()
         eval_env = TwoActionsTwoStates()
+        network_kwargs = {'double_value': True}
         sac = SAC(env, eval_env=eval_env, entropy_scale=0.2, discount_factor=1, lr=0.01, buffer_size=100, batch_size=20,
-                  hidden_size=256, num_layers=2, double_value=True)
+                  network_kwargs=network_kwargs)
         sac.train(num_steps=4000)
 
         avg = sac.evaluate()
@@ -101,8 +99,8 @@ class TestSAC(unittest.TestCase):
 
     def test_normalization_simple(self):
         env = ConstRewardEnv()
-        sac = SAC(env, entropy_scale=1, lr=0.01, buffer_size=1, batch_size=1, hidden_size=256, num_layers=2,
-                  normalized=True, pop_art_factor=0.5)
+        network_kwargs = {'normalized': True, 'pop_art_factor': 0.5}
+        sac = SAC(env, entropy_scale=1, lr=0.01, buffer_size=1, batch_size=1, network_kwargs=network_kwargs)
 
         sac.train(num_steps=5000)
         normalized_value = sac.get_value(([0], 0))
@@ -114,10 +112,10 @@ class TestSAC(unittest.TestCase):
         self.assertAlmostEqual(1, sac.network.shift.data.item(), places=4)
 
     def test_normalization_two_states(self):
-        delta = 0.1
+        delta = 0.2
         env = PredictableRewardEnv()
-        sac = SAC(env, entropy_scale=0.2, lr=0.01, buffer_size=100, batch_size=100, hidden_size=256, num_layers=2,
-                  normalized=True, pop_art_factor=0.1)
+        network_kwargs = {'normalized': True, 'pop_art_factor': 0.1}
+        sac = SAC(env, entropy_scale=0.2, lr=0.01, buffer_size=100, batch_size=100, network_kwargs=network_kwargs)
         sac.train(num_steps=10000)
 
         normalized_value_pos = sac.get_value(([1], 0))
