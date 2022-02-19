@@ -53,9 +53,9 @@ class ReplayBuffer:
         sampled_idx = torch.randint(0, self.num_items, size=(sample_size,), generator=self.generator)
 
         sampled_obs = self.obs[sampled_idx]
-        sampled_actions = self.actions[sampled_idx]
-        sampled_rewards = self.rewards[sampled_idx]
+        sampled_actions = self.actions[sampled_idx].squeeze(dim=1).long()
+        sampled_rewards = self.rewards[sampled_idx].squeeze(dim=1)
         sampled_next_states = self.next_states[sampled_idx]
-        sampled_dones = self.dones[sampled_idx]
+        sampled_dones = self.dones[sampled_idx].squeeze(dim=1).float()
 
         return sampled_obs, sampled_actions, sampled_rewards, sampled_next_states, sampled_dones

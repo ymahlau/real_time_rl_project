@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional, Tuple, List, Any
+from typing import Optional, Tuple, List, Any, Union
 
 import gym
 import torch
@@ -8,6 +8,7 @@ from tqdm import tqdm
 
 from src.agents.buffer import ReplayBuffer
 from src.agents.networks import PolicyValueNetwork
+from src.utils.utils import moving_average
 
 
 class ActorCritic(ABC):
@@ -23,6 +24,8 @@ class ActorCritic(ABC):
             discount_factor: float = 0.99,
             reward_scaling_factor: float = 1.0,
             lr: float = 0.0003,
+            actor_critic_factor: float = 0.1,
+            target_smoothing_factor: float = 0.005,
     ):
         # environment
         if not isinstance(env.action_space, gym.spaces.Discrete):
@@ -36,6 +39,7 @@ class ActorCritic(ABC):
 
         # network
         self.use_target = use_target
+        self.target_smoothing_factor = target_smoothing_factor
 
         self.network = PolicyValueNetwork(**network_kwargs)
         if use_target:
@@ -49,23 +53,22 @@ class ActorCritic(ABC):
         self.buffer = ReplayBuffer(self.network.policy_input_size, capacity=buffer_size)
 
         # optimizer and loss
+        self.actor_critic_factor = actor_critic_factor
         self.optim = optim.Adam(self.network.parameters(), lr=lr)
         self.mse_loss = nn.MSELoss()
 
-    @abstractmethod
     def act(self, obs: Any) -> int:
-        pass
+        obs_tensor = self.obs_to_tensor(obs)
+        action = self.network.act(obs_tensor)
+        return action
+
+    def get_action_distribution(self, obs: Any) -> Tensor:
+        obs_tensor = self.obs_to_tensor(obs)
+        dist = self.network.get_action_distribution(obs_tensor)
+        return dist
 
     @abstractmethod
     def get_value(self, obs: Any) -> Tensor:
-        pass
-
-    @abstractmethod
-    def get_action_distribution(self, obs: Any) -> Tensor:
-        pass
-
-    @abstractmethod
-    def update(self, samples: Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]):
         pass
 
     @abstractmethod
@@ -91,6 +94,50 @@ class ActorCritic(ABC):
        """
         torch.save(self.network.state_dict(), f"{log_dest}.model")
         print("Saved current training progress")
+
+    def all_state_action_pairs(self, state: Tensor) -> Tensor:
+        # shape (batch, num_act, num_states)
+        state_expanded = state[:, None, :].expand(-1, self.num_actions, -1)
+        # shape = (batch, num_act, num_act)
+        all_actions_expanded = torch.eye(self.num_actions)[None, :, :].expand(self.batch_size, -1, -1)
+
+        # (batch, num_act, num_states + num_act)
+        next_obs_all_actions = torch.cat((state_expanded, all_actions_expanded), dim=2)
+        flattened = torch.flatten(next_obs_all_actions, start_dim=0, end_dim=1)  # (batch * act, num_states + num_act)
+        return flattened
+
+    def handle_normalization(self, targets: Tensor):
+        # update normalization parameters
+        self.network.update_normalization(targets)
+
+        # compute normalized loss
+        if self.use_target:
+            norm_target = self.target.normalize(targets)
+        else:
+            norm_target = self.network.normalize(targets)
+        targets = norm_target.detach().float()
+        return targets
+
+    @abstractmethod
+    def value_loss(self, samples: Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]) -> Tensor:
+        pass
+
+    @abstractmethod
+    def policy_loss(self, samples: Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]) -> Tensor:
+        pass
+
+    def update(self, samples: Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]):
+        self.optim.zero_grad()
+        value_loss = self.value_loss(samples)
+        policy_loss = self.policy_loss(samples)
+
+        loss = self.actor_critic_factor * policy_loss + value_loss
+
+        loss.backward()
+        self.optim.step()
+
+        if self.use_target:
+            moving_average(self.target.parameters(), self.network.parameters(), self.target_smoothing_factor)
 
     def evaluate(self,
                  iterations: int = 100,
@@ -133,7 +180,7 @@ class ActorCritic(ABC):
             track_stats: bool = False,
             track_rate: int = 100,  # Every how many steps the average reward is calculated
             progress_bar: bool = False,
-    ) -> Optional[List]:
+    ) -> Union[Optional[List], float]:
 
         if checkpoint is not None:
             self.load_network(checkpoint)

@@ -88,7 +88,7 @@ class TestSAC(unittest.TestCase):
         network_kwargs = {'double_value': True}
         sac = SAC(env, eval_env=eval_env, entropy_scale=0.2, discount_factor=1, lr=0.01, buffer_size=100, batch_size=20,
                   network_kwargs=network_kwargs)
-        sac.train(num_steps=4000)
+        sac.train(num_steps=10000)
 
         avg = sac.evaluate()
         self.assertAlmostEqual(2, avg, delta=delta)
@@ -116,7 +116,7 @@ class TestSAC(unittest.TestCase):
         env = PredictableRewardEnv()
         network_kwargs = {'normalized': True, 'pop_art_factor': 0.1}
         sac = SAC(env, entropy_scale=0.2, lr=0.01, buffer_size=100, batch_size=100, network_kwargs=network_kwargs)
-        sac.train(num_steps=10000)
+        sac.train(num_steps=5000)
 
         normalized_value_pos = sac.get_value(([1], 0))
         unnormalized_value_pos = sac.network.unnormalize(normalized_value_pos)
