@@ -18,7 +18,7 @@ def visualize_statistics(statistics: List, save_dest: str):
         plt.plot(x, y)
         plt.fill_between(x, y_lower, y_upper, alpha=0.1)
 
-    plt.savefig("{0}.png".format(save_dest))
+    plt.savefig(f"{save_dest}.png")
 
 
 def analyse_experiments(data_paths: List[str]) -> np.ndarray:

@@ -21,7 +21,7 @@ class ReplayBuffer:
         else:
             self.device = torch.device('cpu')
 
-        self.obs = torch.zeros(size=(capacity, obs_len), dtype=torch.float).to(self.device)
+        self.obs = torch.zeros(size=(capacity, obs_len), dtype=torch.float, device=self.device)
         self.actions = torch.zeros(size=(capacity, 1), dtype=torch.int).to(self.device)
         self.rewards = torch.zeros(size=(capacity, 1), dtype=torch.float).to(self.device)
         self.next_states = torch.zeros(size=(capacity, obs_len), dtype=torch.float).to(self.device)

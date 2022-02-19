@@ -118,10 +118,10 @@ class SAC(ActorCritic):
         action_dist = self.network.get_action_distribution(states)
 
         flattened = self.all_state_action_pairs(states)
-        values = self.network.get_value(flattened)  # TODO: do we need the target network here?
+        values = self.network.get_value(flattened)
         values_unflattened = values.unflatten(dim=0, sizes=(self.batch_size, self.num_actions)).squeeze(dim=2)
 
-        if self.network.normalized:  # TODO: do we need the target network here?
+        if self.network.normalized:
             values_unflattened = self.network.unnormalize(values_unflattened)
 
         values_unflattened = values_unflattened.detach().float()

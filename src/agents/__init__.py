@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+import time
 from typing import Optional, Tuple, List, Any, Union
 
 import gym
@@ -227,6 +228,8 @@ class ActorCritic(ABC):
                 # Perform step on env and add step data to replay buffer
                 action = self.act(state)
                 next_state, reward, done, _ = env.step(action)
+                env.render()
+                time.sleep(0.01)
 
                 scaled_reward = self.reward_scaling_factor * reward
                 state_tensor = self.obs_to_tensor(state)

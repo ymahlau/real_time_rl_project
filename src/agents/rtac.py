@@ -145,9 +145,9 @@ class RTAC(ActorCritic):
 
         flattened = self.all_state_action_pairs(next_state)
 
-        value_next_obs = self.network.get_value(flattened).reshape(self.batch_size, self.num_actions)  # TODO: target network?
+        value_next_obs = self.network.get_value(flattened).reshape(self.batch_size, self.num_actions)
 
-        if self.network.normalized:  # TODO: do we need the target network here?
+        if self.network.normalized:
             value_next_obs = self.network.unnormalize(value_next_obs)
 
         critic_approx = (1 - dones_expanded) * self.discount_factor * (1 / self.entropy_scale)
