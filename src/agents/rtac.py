@@ -80,10 +80,10 @@ class RTAC(ActorCritic):
         Converts the observation tuple (s,a) returned by rtmdp
         into a single sequence s + one_hot_encoding(a)
         """
-        last_state = torch.tensor(obs[0], dtype=torch.float)
-        one_hot = F.one_hot(torch.tensor(obs[1]), num_classes=self.num_actions).float()
+        last_state = torch.tensor(obs[0], dtype=torch.float, device=self.device)
+        one_hot = F.one_hot(torch.tensor(obs[1], device=self.device), num_classes=self.num_actions).float()
 
-        flattened_obs = torch.cat((last_state, one_hot), dim=0).to(self.device)
+        flattened_obs = torch.cat((last_state, one_hot), dim=0)
         return flattened_obs
 
     def value_loss(self, samples: Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]) -> Tensor:

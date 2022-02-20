@@ -22,10 +22,10 @@ class ReplayBuffer:
             self.device = torch.device('cpu')
 
         self.obs = torch.zeros(size=(capacity, obs_len), dtype=torch.float, device=self.device)
-        self.actions = torch.zeros(size=(capacity, 1), dtype=torch.int).to(self.device)
-        self.rewards = torch.zeros(size=(capacity, 1), dtype=torch.float).to(self.device)
-        self.next_states = torch.zeros(size=(capacity, obs_len), dtype=torch.float).to(self.device)
-        self.dones = torch.zeros(size=(capacity, 1), dtype=torch.bool).to(self.device)
+        self.actions = torch.zeros(size=(capacity, 1), dtype=torch.int, device=self.device)
+        self.rewards = torch.zeros(size=(capacity, 1), dtype=torch.float, device=self.device)
+        self.next_states = torch.zeros(size=(capacity, obs_len), dtype=torch.float, device=self.device)
+        self.dones = torch.zeros(size=(capacity, 1), dtype=torch.bool, device=self.device)
 
         self.generator = torch.Generator(device=self.device)
         if seed is not None:
@@ -42,11 +42,11 @@ class ReplayBuffer:
         data = (state, action, reward, next_state, done)
         All tensors have to be 1-dimensional
         """
-        new_obs = data[0].to(self.device)
-        new_action = torch.tensor(data[1], dtype=torch.int).to(self.device)
-        new_reward = torch.tensor(data[2], dtype=torch.float).to(self.device)
-        new_next_action = data[3].to(self.device)
-        new_done = torch.tensor(data[4], dtype=torch.bool).to(self.device)
+        new_obs = data[0]
+        new_action = torch.tensor(data[1], dtype=torch.int, device=self.device)
+        new_reward = torch.tensor(data[2], dtype=torch.float, device=self.device)
+        new_next_action = data[3]
+        new_done = torch.tensor(data[4], dtype=torch.bool, device=self.device)
 
         self.obs[self.next_idx] = new_obs
         self.actions[self.next_idx] = new_action

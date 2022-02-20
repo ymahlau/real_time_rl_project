@@ -1,8 +1,9 @@
+import random
 from abc import ABC, abstractmethod
-import time
 from typing import Optional, Tuple, List, Any, Union
 
 import gym
+import numpy as np
 import torch
 from torch import Tensor, optim, nn
 from tqdm import tqdm
@@ -30,7 +31,15 @@ class ActorCritic(ABC):
             use_device: bool = True,
             seed: Optional[int] = None,
     ):
+        # reproducibility
         self.seed = seed
+        if seed is not None:
+            env.seed(seed)
+            if eval_env is not None:
+                eval_env.seed(seed)
+            torch.manual_seed(seed)
+            np.random.seed(seed)
+            random.seed(seed)
 
         # environment
         if not isinstance(env.action_space, gym.spaces.Discrete):
@@ -113,7 +122,8 @@ class ActorCritic(ABC):
         # shape (batch, num_act, num_states)
         state_expanded = state[:, None, :].expand(-1, self.num_actions, -1)
         # shape = (batch, num_act, num_act)
-        all_actions_expanded = torch.eye(self.num_actions)[None, :, :].expand(self.batch_size, -1, -1).to(self.device)
+        eye = torch.eye(self.num_actions, device=self.device)
+        all_actions_expanded = eye[None, :, :].expand(self.batch_size, -1, -1)
 
         # (batch, num_act, num_states + num_act)
         next_obs_all_actions = torch.cat((state_expanded, all_actions_expanded), dim=2)
@@ -153,6 +163,7 @@ class ActorCritic(ABC):
         if self.use_target:
             moving_average(self.target.parameters(), self.network.parameters(), self.target_smoothing_factor)
 
+    @torch.no_grad()
     def evaluate(self,
                  iterations: int = 100,
                  progress_bar: bool = False,
@@ -171,6 +182,7 @@ class ActorCritic(ABC):
               track_stats: bool = False,
               track_rate: int = 100,
               progress_bar: bool = False,
+              iter_per_track: int = 100,
               ) -> Optional[List]:
         return self.env_loop(
             train=True,
@@ -181,6 +193,7 @@ class ActorCritic(ABC):
             track_stats=track_stats,
             track_rate=track_rate,
             progress_bar=progress_bar,
+            iter_per_track=iter_per_track,
         )
 
     def env_loop(
@@ -193,6 +206,7 @@ class ActorCritic(ABC):
             save_rate: int = 1000,  # Every how many steps the model is saved
             track_stats: bool = False,
             track_rate: int = 100,  # Every how many steps the average reward is calculated
+            iter_per_track: int = 100,  # How many iterations in the avg calculation
             progress_bar: bool = False,
     ) -> Union[Optional[List], float]:
 
@@ -228,8 +242,6 @@ class ActorCritic(ABC):
                 # Perform step on env and add step data to replay buffer
                 action = self.act(state)
                 next_state, reward, done, _ = env.step(action)
-                env.render()
-                time.sleep(0.01)
 
                 scaled_reward = self.reward_scaling_factor * reward
                 state_tensor = self.obs_to_tensor(state)
@@ -243,7 +255,7 @@ class ActorCritic(ABC):
                 if train:
                     # Log current performances
                     if track_stats and env_steps % track_rate == 0:
-                        avg = self.evaluate()
+                        avg = self.evaluate(iterations=iter_per_track)
                         performances.append([env_steps, avg])
 
                     # Save current model if necessary

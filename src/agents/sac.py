@@ -29,11 +29,16 @@ class SAC(ActorCritic):
         # arguments for network generation
         if network_kwargs is None:
             network_kwargs = {}
-        network_kwargs['value_input_size'] = env.observation_space.shape[0] + env.action_space.n
-        network_kwargs['policy_input_size'] = env.observation_space.shape[0]
+        if isinstance(env.observation_space, gym.spaces.Tuple):  # case: RTMDP(E)
+            self.full_obs_len = env.observation_space[0].shape[0] + env.observation_space[1].n
+            network_kwargs['value_input_size'] = self.full_obs_len + env.action_space.n
+            network_kwargs['policy_input_size'] = self.full_obs_len
+            num_obs = self.full_obs_len
+        else:  # case E
+            network_kwargs['value_input_size'] = env.observation_space.shape[0] + env.action_space.n
+            network_kwargs['policy_input_size'] = env.observation_space.shape[0]
+            num_obs = env.observation_space.shape[0]
         network_kwargs['output_size'] = env.action_space.n
-
-        num_obs = env.observation_space.shape[0]
 
         super().__init__(
             env=env,
@@ -55,12 +60,17 @@ class SAC(ActorCritic):
         self.entropy_scale = entropy_scale
 
     def obs_to_tensor(self, obs: Any) -> Tensor:
-        obs_tensor = torch.tensor(obs, dtype=torch.float).to(self.device)
+        if isinstance(self.env.observation_space, gym.spaces.Tuple):  # case: RTMDP(E)
+            state_tensor = torch.tensor(obs[0], dtype=torch.float, device=self.device)
+            one_hot = F.one_hot(torch.tensor(obs[1], device=self.device), num_classes=self.num_actions).float()
+            obs_tensor = torch.cat((state_tensor, one_hot), dim=0)
+        else:  # case E
+            obs_tensor = torch.tensor(obs, dtype=torch.float, device=self.device)
         return obs_tensor
 
     def get_value(self, obs: Tuple[Any, int]) -> Tensor:
-        action_tensor = torch.tensor(obs[1])
-        one_hot_action = F.one_hot(action_tensor, num_classes=self.num_actions).to(self.device)
+        action_tensor = torch.tensor(obs[1], device=self.device)
+        one_hot_action = F.one_hot(action_tensor, num_classes=self.num_actions)
         obs_tensor = self.obs_to_tensor(obs[0])
 
         concat_tensor = torch.cat((obs_tensor, one_hot_action), dim=0)

@@ -1,10 +1,12 @@
 import math
 import unittest
 
+import gym
 import torch
 
 from src.agents.sac import SAC
 from src.envs.probe_envs import ConstRewardEnv, PredictableRewardEnv, TwoActionsTwoStates
+from src.utils.wrapper import RTMDP
 
 
 class TestSAC(unittest.TestCase):
@@ -130,4 +132,13 @@ class TestSAC(unittest.TestCase):
 
         self.assertAlmostEqual(1, sac.network.scale.data.item(), delta=delta)
         self.assertAlmostEqual(0, sac.network.shift.data.item(), delta=delta)
+
+    def test_rtmdp_e(self):
+        env = RTMDP(TwoActionsTwoStates(), initial_action=0)
+        eval_env = RTMDP(TwoActionsTwoStates(), initial_action=0)
+        sac = SAC(env, eval_env=eval_env, entropy_scale=0.2, discount_factor=1, lr=0.01, buffer_size=100, batch_size=50)
+
+        # only test if this throws errors, performance is inherently bad
+        sac.train(num_steps=1000)
+
 
