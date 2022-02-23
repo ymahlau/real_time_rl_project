@@ -88,7 +88,9 @@ class SAC(ActorCritic):
         actions_one_hot = F.one_hot(actions, num_classes=self.num_actions).to(self.device)
 
         dones_expanded = dones[:, None].expand(-1, self.num_actions)
-        next_actions_dist = self.network.get_action_distribution(next_states)
+        dist_current_obs = self.network.get_action_distribution(next_states)
+        dist_current_obs_clamped = torch.clamp(dist_current_obs, min=1e-8)
+        dist_current_obs_log_clamped = dist_current_obs_clamped.log()
 
         flattened = self.all_state_action_pairs(next_states)
 
@@ -108,9 +110,9 @@ class SAC(ActorCritic):
 
         # compute new targets
         targets_discount = self.discount_factor * (1 - dones_expanded) * values_unflattened
-        targets_entropy = self.entropy_scale * next_actions_dist.log()
+        targets_entropy = self.entropy_scale * dist_current_obs_log_clamped
 
-        target_expectation = torch.sum(next_actions_dist * (targets_discount - targets_entropy), dim=1).float()
+        target_expectation = torch.sum(dist_current_obs * (targets_discount - targets_entropy), dim=1).float()
         targets = (rewards + target_expectation).detach().float()
 
         if self.network.normalized:
@@ -125,7 +127,9 @@ class SAC(ActorCritic):
 
     def policy_loss(self, samples: Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]):
         states = samples[0]
-        action_dist = self.network.get_action_distribution(states)
+        dist_current_obs = self.network.get_action_distribution(states)
+        dist_current_obs_clamped = torch.clamp(dist_current_obs, min=1e-8)
+        dist_current_obs_log_clamped = dist_current_obs_clamped.log()
 
         flattened = self.all_state_action_pairs(states)
         values = self.network.get_value(flattened)
@@ -136,8 +140,8 @@ class SAC(ActorCritic):
 
         values_unflattened = values_unflattened.detach().float()
 
-        kl_div_term = action_dist.log() - self.discount_factor * (1 / self.entropy_scale) * values_unflattened
-        policy_loss = torch.sum(action_dist * kl_div_term, dim=1)
+        kl_div_term = dist_current_obs_log_clamped - self.discount_factor * (1 / self.entropy_scale) * values_unflattened
+        policy_loss = torch.sum(dist_current_obs * kl_div_term, dim=1)
         if self.network.normalized:
             policy_loss = self.network.normalize(policy_loss)
 

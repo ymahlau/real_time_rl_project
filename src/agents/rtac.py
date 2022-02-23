@@ -90,7 +90,8 @@ class RTAC(ActorCritic):
         # states x_t = (s_t, a_t), obs is the concatenated state and value
         current_obs = samples[0]
         dist_current_obs = self.network.get_action_distribution(current_obs)  # pi(a | s_t, a_t)
-
+        dist_current_obs_clamped = torch.clamp(dist_current_obs, min=1e-8)
+        dist_current_obs_log_clamped = dist_current_obs_clamped.log()
         rewards = samples[2]  # r(s_t, a_t)
 
         # tensor of next states: x_t+1 = (s_t+1, a_t+1)
@@ -118,7 +119,7 @@ class RTAC(ActorCritic):
 
         # expectation of next state values
         value_expectation = (1 - dones_expanded) * self.discount_factor * values_unflattened
-        value_expectation -= self.entropy_scale * dist_current_obs.log()
+        value_expectation -= self.entropy_scale * dist_current_obs_log_clamped
         value_expectation = torch.sum(dist_current_obs * value_expectation, dim=1)
         targets = (rewards + value_expectation).detach().float()
 
@@ -134,6 +135,8 @@ class RTAC(ActorCritic):
         # states x_t = (s_t, a_t), obs is the concatenated state and value
         current_obs = samples[0]
         dist_current_obs = self.network.get_action_distribution(current_obs)  # pi(a | s_t, a_t)
+        dist_current_obs_clamped = torch.clamp(dist_current_obs, min=1e-8)
+        dist_current_obs_log_clamped = dist_current_obs_clamped.log()
 
         # done values
         dones = samples[4]
@@ -153,7 +156,7 @@ class RTAC(ActorCritic):
         critic_approx = (1 - dones_expanded) * self.discount_factor * (1 / self.entropy_scale)
         critic_approx = (critic_approx * value_next_obs).detach()
 
-        kl_div = torch.sum(dist_current_obs * (dist_current_obs.log() - critic_approx), dim=1)
+        kl_div = torch.sum(dist_current_obs * (dist_current_obs_log_clamped - critic_approx), dim=1)
         if self.network.normalized:
             kl_div = self.network.normalize(kl_div)
 
