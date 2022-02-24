@@ -1,6 +1,6 @@
 import csv
 from pathlib import Path
-from typing import Union
+from typing import Union, Optional
 
 from src.agents import ActorCritic
 
@@ -9,6 +9,7 @@ def perform_experiment(
         algorithm: ActorCritic,
         file_name: str,
         file_path: Union[str, Path],
+        model_dest: Optional[str] = None,
         num_steps: int = 1e6,  # total number of steps
         track_rate: int = 100,  # how many steps until data point is collected
         iter_per_track: int = 100,  # how many iterations per data point collection
@@ -28,6 +29,8 @@ def perform_experiment(
                                    track_stats=True,
                                    track_rate=track_rate,
                                    progress_bar=True,
+                                   save_dest=model_dest,
+                                   save_rate=num_steps-1,
                                    iter_per_track=iter_per_track)
 
     f = open(f"{file_path}/{file_name}.csv", 'a', newline='')
@@ -35,5 +38,3 @@ def perform_experiment(
     writer.writerow(['Step', 'Average Reward'])  # Header
     writer.writerows(performances)  # Data
     f.close()
-
-
