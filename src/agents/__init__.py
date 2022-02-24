@@ -105,17 +105,19 @@ class ActorCritic(ABC):
 
             checkpoint: Absolute path without ending to the two files the model is saved in.
         """
-        self.network.load_state_dict(torch.load(f"{checkpoint}.model"))
+        self.network.load_state_dict(torch.load(f"{checkpoint}.pt"))
         if self.use_target:
-            self.target.load_state_dict(torch.load(f"{checkpoint}.model"))
+            self.target.load_state_dict(torch.load(f"{checkpoint}.pt"))
         print(f"Continuing training on {checkpoint}.")
 
     def save_network(self, log_dest: str):
         """
            Saves the model with parameters to the files referred to by the file path log_dest.
            log_dest: Absolute path without ending to the two files the model is to be saved in.
-       """
-        torch.save(self.network.state_dict(), f"{log_dest}.model")
+        """
+        file_dst = f"{log_dest}.pt"
+
+        torch.save(self.network.state_dict(), file_dst)
         print("Saved current training progress")
 
     def all_state_action_pairs(self, state: Tensor) -> Tensor:
@@ -259,7 +261,7 @@ class ActorCritic(ABC):
                         performances.append([env_steps, avg])
 
                     # Save current model if necessary
-                    if save_dest is not None and env_steps % save_rate == 0:
+                    if save_dest is not None and env_steps % save_rate == 0 and env_steps != 0:
                         self.save_network(save_dest)
 
                     # update

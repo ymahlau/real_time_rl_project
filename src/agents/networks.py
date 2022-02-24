@@ -23,13 +23,13 @@ class Network(nn.Module):
         if input_size < 1:
             raise ValueError(f"input_size must be greater or equal to 1 and not {input_size}")
 
+        self.num_layers = num_layers
+        self.hidden_size = hidden_size
+
         # special case: single layer
         if num_layers == 1:
             self.single_layer = nn.Linear(input_size, output_size)
             return
-
-        self.num_layers = num_layers
-        self.hidden_size = hidden_size
 
         self.input = nn.Linear(input_size, hidden_size)
         self.output = nn.Linear(hidden_size, output_size)

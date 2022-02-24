@@ -1,11 +1,11 @@
 from pathlib import Path
-from typing import List, Any, Union, Dict
+from typing import List, Any, Union, Dict, Optional
 import numpy as np
 from scipy.stats import bootstrap
 from matplotlib import pyplot as plt
 
 
-def visualize_statistics(statistics: Dict[str, np.ndarray], save_dest: Union[str, Path]):
+def visualize_statistics(statistics: Dict[str, np.ndarray], save_dest: Optional[Union[str, Path]] = None):
     plt.clf()
     plt.figure(figsize=(8, 8), dpi=200)
     plt.xlabel("Steps")
@@ -21,7 +21,8 @@ def visualize_statistics(statistics: Dict[str, np.ndarray], save_dest: Union[str
         plt.fill_between(x, y_lower, y_upper, alpha=0.1)
 
     plt.legend()
-    plt.savefig(f"{save_dest}.png")
+    if save_dest is not None:
+        plt.savefig(f"{save_dest}.png")
     plt.show()
 
 

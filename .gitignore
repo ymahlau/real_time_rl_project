@@ -2,6 +2,7 @@
 test/test_data
 test/test_plots
 .idea
+model_data
 
 
 # Byte-compiled / optimized / DLL files
