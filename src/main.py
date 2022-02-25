@@ -19,7 +19,8 @@ def experiment_rtac(env: gym.Env,
                     use_double: bool = False,
                     use_normalization: bool = False,
                     use_shared: bool = False,
-                    iter_per_track: int = 100
+                    iter_per_track: int = 100,
+                    use_device: bool = True,
                     ):
     _experiment(
         env=env,
@@ -35,6 +36,7 @@ def experiment_rtac(env: gym.Env,
         use_shared=use_shared,
         use_rtmdp=True,
         iter_per_track=iter_per_track,
+        use_device=use_device
     )
 
 
@@ -49,6 +51,7 @@ def experiment_sac(env: gym.Env,
                    use_normalization: bool = False,
                    use_rtmdp: bool = False,
                    iter_per_track: int = 100,
+                   use_device: bool = True,
                    ):
     _experiment(
         env=env,
@@ -64,6 +67,7 @@ def experiment_sac(env: gym.Env,
         use_shared=False,
         use_rtmdp=use_rtmdp,
         iter_per_track=iter_per_track,
+        use_device=use_device,
     )
 
 
@@ -79,7 +83,8 @@ def _experiment(env: Union[gym.Env, RTMDP],
                 use_normalization: bool = False,
                 use_shared: bool = False,
                 use_rtmdp: bool = False,
-                iter_per_track: int = 100
+                iter_per_track: int = 100,
+                use_device: bool = True,
                 ):
     print(f'Start experiment {name} with seed {seed} and agent {agent.__name__}')
 
@@ -101,7 +106,8 @@ def _experiment(env: Union[gym.Env, RTMDP],
         env = RTMDP(env, 0)
         eval_env = RTMDP(eval_env, 0)
 
-    alg = agent(env, network_kwargs=network_kwargs, eval_env=eval_env, seed=seed, use_target=use_target)
+    alg = agent(env, network_kwargs=network_kwargs, eval_env=eval_env, seed=seed, use_target=use_target,
+                use_device=use_device)
 
     # saved with name "{agents name}-S{seed}-T{number of data points}-{used variation}"
     # at directory "/experiment_data/{experiment name}"
@@ -134,8 +140,11 @@ def main(seed: int = 0):
     # experiment_sac(gym.make('CartPole-v1'), gym.make('CartPole-v1'), 'CartPole', seed=seed, use_target=True,
     #                use_double=True, use_normalization=True)
 
-    experiment_rtac(gym.make('CartPole-v1'), gym.make('CartPole-v1'), 'CartPole', seed=seed, use_target=False,
-                    use_double=False, use_shared=True, use_normalization=False, iter_per_track=20)
+    # experiment_rtac(gym.make('CartPole-v1'), gym.make('CartPole-v1'), 'CartPole', seed=seed, use_target=False,
+    #                 use_double=False, use_shared=True, use_normalization=False, iter_per_track=20)
+
+    experiment_sac(gym.make('LunarLander-v2'), gym.make('LunarLander-v2'), 'LunarLander', seed=seed, use_target=False,
+                   use_double=False, use_normalization=False, steps=200000, iter_per_track=1, track_rate=2000)
 
 
 if __name__ == '__main__':
