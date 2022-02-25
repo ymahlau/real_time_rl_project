@@ -7,6 +7,7 @@ dependencies:
   - python=3.9.9
   - pip=22.0.3
   - pytorch==1.10.2
+  - swig==4.0.2
   - git
   - pip:
     - matplotlib==3.5.1
@@ -17,3 +18,4 @@ dependencies:
     - pytest==7.0.1
     - tqdm==4.62.3
     - pandas==1.4.1
+    - Box2D-kengz==2.3.3
