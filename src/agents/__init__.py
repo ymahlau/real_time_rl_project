@@ -12,7 +12,6 @@ from src.agents.buffer import ReplayBuffer
 from src.agents.networks import PolicyValueNetwork
 from src.utils.utils import moving_average, get_device
 
-
 class ActorCritic(ABC):
     def __init__(
             self,

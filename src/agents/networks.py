@@ -199,4 +199,4 @@ class PolicyValueNetwork(nn.Module):
 
         # then update weights of norm layer
         self.norm_layer.weight.data = (old_scale / self.scale) * self.norm_layer.weight
-        self.norm_layer.bias.data = (self.scale * self.norm_layer.bias + old_shift - self.shift) / self.scale
+        self.norm_layer.bias.data = (old_scale * self.norm_layer.bias + old_shift - self.shift) / self.scale
