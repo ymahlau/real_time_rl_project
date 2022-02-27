@@ -19,3 +19,4 @@ dependencies:
     - tqdm==4.62.3
     - pandas==1.4.1
     - Box2D-kengz==2.3.3
+    - pyglet==1.5.21
