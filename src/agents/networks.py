@@ -143,6 +143,10 @@ class PolicyValueNetwork(nn.Module):
 
     def act(self, state: Tensor) -> int:
         act_dist = self.get_action_distribution(state)
+
+        if torch.isnan(act_dist).any().item():
+            raise ValueError('Zero in Action Distribution. Consider using lower learning rate or check for errors')
+
         chosen_action = Categorical(act_dist).sample().item()
         return chosen_action
 

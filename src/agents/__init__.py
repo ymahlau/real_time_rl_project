@@ -44,7 +44,7 @@ class ActorCritic(ABC):
         if not isinstance(env.action_space, gym.spaces.Discrete):
             raise ValueError("Action space is not discrete!")
         self.env = env
-        self.eval_eval = eval_env
+        self.eval_env = eval_env
         self.num_actions = env.action_space.n
         self.num_obs = num_obs
         self.discount_factor = discount_factor
@@ -214,7 +214,7 @@ class ActorCritic(ABC):
         if checkpoint is not None:
             self.load_network(checkpoint)
 
-        if self.eval_eval is None:
+        if self.eval_env is None:
             if track_stats:
                 raise ValueError("An evaluation environment has to be specified if tracking statistics.")
             if not train:
@@ -227,7 +227,7 @@ class ActorCritic(ABC):
         def training_ongoing():
             return (train and env_steps < num_steps) or (not train and num_episodes < iterations)
 
-        env = self.env if train else self.eval_eval
+        env = self.env if train else self.eval_env
         env_steps = 0
         num_episodes = 0
         performances = []
@@ -239,6 +239,9 @@ class ActorCritic(ABC):
             state = env.reset()
 
             while not done:
+                # sanity check
+                if torch.tensor([torch.isnan(p).any() for p in self.network.parameters()]).any().item():
+                    raise ValueError('NaN in model parameters. Consider using a lower learning rate')
 
                 # Perform step on env and add step data to replay buffer
                 action = self.act(state)
@@ -248,7 +251,8 @@ class ActorCritic(ABC):
                 state_tensor = self.obs_to_tensor(state)
                 next_state_tensor = self.obs_to_tensor(next_state)
 
-                self.buffer.add_data((state_tensor, action, scaled_reward, next_state_tensor, done))
+                if train:
+                    self.buffer.add_data((state_tensor, action, scaled_reward, next_state_tensor, done))
 
                 state = next_state
                 cum_reward += reward

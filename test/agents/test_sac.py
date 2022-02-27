@@ -107,7 +107,7 @@ class TestSAC(unittest.TestCase):
         sac.train(num_steps=5000)
         normalized_value = sac.get_value(([0], 0))
         unnormalized_value = sac.network.unnormalize(normalized_value)
-        self.assertAlmostEqual(0, normalized_value.item(), places=2)
+        self.assertAlmostEqual(0, normalized_value.item(), delta=0.1)
         self.assertAlmostEqual(1, unnormalized_value.item(), places=4)
 
         self.assertAlmostEqual(0.001, sac.network.scale.data.item(), places=4)
