@@ -90,7 +90,7 @@ class RTAC(ActorCritic):
         # states x_t = (s_t, a_t), obs is the concatenated state and value
         current_obs = samples[0]
         dist_current_obs = self.network.get_action_distribution(current_obs)  # pi(a | s_t, a_t)
-        dist_current_obs_clamped = torch.clamp(dist_current_obs, min=1e-8)
+        dist_current_obs_clamped = torch.clamp(dist_current_obs, min=self.network.epsilon)
         dist_current_obs_log_clamped = dist_current_obs_clamped.log()
         rewards = samples[2]  # r(s_t, a_t)
 
@@ -135,7 +135,7 @@ class RTAC(ActorCritic):
         # states x_t = (s_t, a_t), obs is the concatenated state and value
         current_obs = samples[0]
         dist_current_obs = self.network.get_action_distribution(current_obs)  # pi(a | s_t, a_t)
-        dist_current_obs_clamped = torch.clamp(dist_current_obs, min=1e-8)
+        dist_current_obs_clamped = torch.clamp(dist_current_obs, min=self.network.epsilon)
         dist_current_obs_log_clamped = dist_current_obs_clamped.log()
 
         # done values

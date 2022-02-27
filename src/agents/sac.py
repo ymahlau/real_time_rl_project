@@ -89,7 +89,7 @@ class SAC(ActorCritic):
 
         dones_expanded = dones[:, None].expand(-1, self.num_actions)
         dist_current_obs = self.network.get_action_distribution(next_states)
-        dist_current_obs_clamped = torch.clamp(dist_current_obs, min=1e-8)
+        dist_current_obs_clamped = torch.clamp(dist_current_obs, min=self.network.epsilon)
         dist_current_obs_log_clamped = dist_current_obs_clamped.log()
 
         flattened = self.all_state_action_pairs(next_states)
@@ -128,7 +128,7 @@ class SAC(ActorCritic):
     def policy_loss(self, samples: Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]):
         states = samples[0]
         dist_current_obs = self.network.get_action_distribution(states)
-        dist_current_obs_clamped = torch.clamp(dist_current_obs, min=1e-8)
+        dist_current_obs_clamped = torch.clamp(dist_current_obs, min=self.network.epsilon)
         dist_current_obs_log_clamped = dist_current_obs_clamped.log()
 
         flattened = self.all_state_action_pairs(states)

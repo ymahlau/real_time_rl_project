@@ -143,6 +143,10 @@ class PolicyValueNetwork(nn.Module):
 
     def act(self, state: Tensor) -> int:
         act_dist = self.get_action_distribution(state)
+
+        if torch.isnan(act_dist).any().item():
+            raise ValueError('Zero in Action Distribution. Consider using lower learning rate or check for errors')
+
         chosen_action = Categorical(act_dist).sample().item()
         return chosen_action
 
@@ -199,4 +203,4 @@ class PolicyValueNetwork(nn.Module):
 
         # then update weights of norm layer
         self.norm_layer.weight.data = (old_scale / self.scale) * self.norm_layer.weight
-        self.norm_layer.bias.data = (self.scale * self.norm_layer.bias + old_shift - self.shift) / self.scale
+        self.norm_layer.bias.data = (old_scale * self.norm_layer.bias + old_shift - self.shift) / self.scale
