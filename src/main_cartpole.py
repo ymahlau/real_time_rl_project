@@ -6,32 +6,47 @@ from src.main import experiment_sac, experiment_rtac
 
 
 def main(seed: int = 0):
-    #experiment_sac(gym.make('Acrobot-v1'), gym.make('Acrobot-v1'), 'Acrobot', seed=seed)
-    #experiment_rtac(gym.make('Acrobot-v1'), gym.make('Acrobot-v1'), 'Acrobot', seed=seed)
-    #experiment_sac(gym.make('Acrobot-v1'), gym.make('Acrobot-v1'), 'Acrobot', seed=seed, use_rtmdp=True)
+    iter_per_track = 10
 
-    experiment_sac(gym.make('CartPole-v1'), gym.make('CartPole-v1'), 'CartPole', seed=seed, iter_per_track=20)
-    experiment_rtac(gym.make('CartPole-v1'), gym.make('CartPole-v1'), 'CartPole', seed=seed, iter_per_track=20)
-    experiment_sac(gym.make('CartPole-v1'), gym.make('CartPole-v1'), 'CartPole', seed=seed, iter_per_track=20,
-                   use_rtmdp=True)
+    # a
+    experiment_sac(gym.make('CartPole-v1'), gym.make('CartPole-v1'), 'CartPole', seed=seed,
+                   iter_per_track=iter_per_track)
 
-    experiment_sac(gym.make('CartPole-v1'), gym.make('CartPole-v1'), 'CartPole', seed=seed, iter_per_track=20,
-                   use_rtmdp=True, use_normalization=True)
-    experiment_rtac(gym.make('CartPole-v1'), gym.make('CartPole-v1'), 'CartPole', seed=seed, iter_per_track=20,
-                    use_normalization=True)
+    # b
+    experiment_rtac(gym.make('CartPole-v1'), gym.make('CartPole-v1'), 'CartPole', seed=seed,
+                    iter_per_track=iter_per_track)
 
-    experiment_sac(gym.make('CartPole-v1'), gym.make('CartPole-v1'), 'CartPole', seed=seed, iter_per_track=20,
-                   use_rtmdp=True, use_double=True)
-    experiment_rtac(gym.make('CartPole-v1'), gym.make('CartPole-v1'), 'CartPole', seed=seed, iter_per_track=20,
-                    use_double=True)
+    # c
+    experiment_sac(gym.make('CartPole-v1'), gym.make('CartPole-v1'), 'CartPole', seed=seed,
+                   iter_per_track=iter_per_track, use_rtmdp=True)
 
-    experiment_sac(gym.make('CartPole-v1'), gym.make('CartPole-v1'), 'CartPole', seed=seed, iter_per_track=20,
-                   use_rtmdp=True, use_target=True)
-    experiment_rtac(gym.make('CartPole-v1'), gym.make('CartPole-v1'), 'CartPole', seed=seed, iter_per_track=20,
-                    use_target=True)
+    # d
+    experiment_sac(gym.make('CartPole-v1'), gym.make('CartPole-v1'), 'CartPole', seed=seed,
+                   iter_per_track=iter_per_track, use_rtmdp=True, use_normalization=True)
 
-    experiment_rtac(gym.make('CartPole-v1'), gym.make('CartPole-v1'), 'CartPole', seed=seed, iter_per_track=20,
-                    use_shared=True)
+    # e
+    experiment_rtac(gym.make('CartPole-v1'), gym.make('CartPole-v1'), 'CartPole', seed=seed,
+                    iter_per_track=iter_per_track, use_normalization=True)
+
+    # f
+    experiment_sac(gym.make('CartPole-v1'), gym.make('CartPole-v1'), 'CartPole', seed=seed,
+                   iter_per_track=iter_per_track, use_rtmdp=True, use_double=True)
+
+    # g
+    experiment_rtac(gym.make('CartPole-v1'), gym.make('CartPole-v1'), 'CartPole', seed=seed,
+                    iter_per_track=iter_per_track, use_double=True)
+
+    # h
+    experiment_sac(gym.make('CartPole-v1'), gym.make('CartPole-v1'), 'CartPole', seed=seed,
+                   iter_per_track=iter_per_track, use_rtmdp=True, use_target=True)
+
+    # i
+    experiment_rtac(gym.make('CartPole-v1'), gym.make('CartPole-v1'), 'CartPole', seed=seed,
+                    iter_per_track=iter_per_track, use_target=True)
+
+    # j
+    experiment_rtac(gym.make('CartPole-v1'), gym.make('CartPole-v1'), 'CartPole', seed=seed,
+                    iter_per_track=iter_per_track, use_shared=True)
 
 
 if __name__ == '__main__':

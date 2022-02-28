@@ -253,13 +253,13 @@ class ActorCritic(ABC):
                 state_tensor = self.obs_to_tensor(state)
                 next_state_tensor = self.obs_to_tensor(next_state)
 
-                # if train:
-                self.buffer.add_data((state_tensor, action, scaled_reward, next_state_tensor, done))
-
                 state = next_state
                 cum_reward += reward
 
                 if train:
+                    # add train data
+                    self.buffer.add_data((state_tensor, action, scaled_reward, next_state_tensor, done))
+
                     # Log current performances
                     if track_stats and env_steps % track_rate == 0:
                         avg = self.evaluate(iterations=iter_per_track)
