@@ -1,11 +1,35 @@
 from pathlib import Path
-from typing import List, Any, Union, Dict, Optional
+from typing import List, Any, Union, Dict, Optional, Tuple
 import numpy as np
 from scipy.stats import bootstrap
 from matplotlib import pyplot as plt
 
 
-def visualize_statistics(statistics: Dict[str, np.ndarray], save_dest: Optional[Union[str, Path]] = None):
+def smooth(array: np.ndarray, smoothing_factor: int) -> np.ndarray:
+    """
+    Smooths a 1-D input array by taking the average of the smoothing_factor neighboring points for every entry in the
+    array.
+    """
+    n = len(array)
+    indices = np.arange(0, n)
+    lower_idx = np.maximum(indices - int(smoothing_factor / 2), 0)
+    upper_idx = np.minimum(indices + int(smoothing_factor / 2), n-1)
+
+    x = [
+        np.mean(array[lower_idx[i]:upper_idx[i]]).item()
+        for i
+        in indices
+    ]
+    result = np.asarray(x)
+    return result
+
+def visualize_statistics(
+        statistics: Dict[str, np.ndarray],
+        save_dest: Optional[Union[str, Path]] = None,
+        x_lim: Optional[Tuple[float, float]] = None,
+        y_lim: Optional[Tuple[float, float]] = None,
+        smoothing_factor: int = 1,  # how many points to average to single new point
+):
     plt.clf()
     plt.figure(figsize=(8, 8), dpi=200)
     plt.xlabel("Steps")
@@ -13,12 +37,17 @@ def visualize_statistics(statistics: Dict[str, np.ndarray], save_dest: Optional[
 
     for name, stats in statistics.items():
         x = stats[:, 0]
-        y = stats[:, 1]
-        y_lower = stats[:, 2]
-        y_upper = stats[:, 3]
+        y = smooth(stats[:, 1], smoothing_factor=smoothing_factor)
+        y_lower = smooth(stats[:, 2], smoothing_factor=smoothing_factor)
+        y_upper = smooth(stats[:, 3], smoothing_factor=smoothing_factor)
 
         plt.plot(x, y, label=name)
         plt.fill_between(x, y_lower, y_upper, alpha=0.1)
+
+    if x_lim is not None:
+        plt.xlim(x_lim)
+    if y_lim is not None:
+        plt.ylim(y_lim)
 
     plt.legend()
     if save_dest is not None:
@@ -64,6 +93,30 @@ def analyse_experiments(data_paths: List[Union[str, Path]]) -> np.ndarray:
     statistics = np.asarray(statistics)
 
     return statistics
+
+def total_regret(stats: np.ndarray, max_return: float) -> Tuple[float, float, float]:
+    """
+    Computes the total regret of a given statistics array.
+    stats: the stats array should be computed using the analyse_experiments function.
+    max_return: the maximum possible return of a single episode
+
+    returns:
+    (mean total regret,
+    lower confidence bound of total regret,
+    upper confidence bound of total regret)
+    """
+    y = stats[:, 1]
+    y_lower = stats[:, 2]
+    y_upper = stats[:, 3]
+
+    avg_regret = np.sum(np.clip(max_return - y, 0, None)).item()
+    lower_regret = np.sum(np.clip(max_return - y_upper, 0, None)).item()
+    upper_regret = np.sum(np.clip(max_return - y_lower, 0, None)).item()
+
+    return avg_regret, lower_regret, upper_regret
+
+
+
 
 
 """
