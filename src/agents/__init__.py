@@ -134,6 +134,8 @@ class ActorCritic(ABC):
     def handle_normalization(self, targets: Tensor):
         # update normalization parameters
         self.network.update_normalization(targets)
+        if self.use_target:
+            self.target.update_normalization(targets)
 
         # compute normalized loss
         if self.use_target:
@@ -251,8 +253,8 @@ class ActorCritic(ABC):
                 state_tensor = self.obs_to_tensor(state)
                 next_state_tensor = self.obs_to_tensor(next_state)
 
-                if train:
-                    self.buffer.add_data((state_tensor, action, scaled_reward, next_state_tensor, done))
+                # if train:
+                self.buffer.add_data((state_tensor, action, scaled_reward, next_state_tensor, done))
 
                 state = next_state
                 cum_reward += reward

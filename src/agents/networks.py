@@ -199,7 +199,7 @@ class PolicyValueNetwork(nn.Module):
         self.second_moment.data = (1 - self.pop_art_factor) * self.second_moment + self.pop_art_factor * square_estimate
         self.shift.data = (1 - self.pop_art_factor) * self.shift + self.pop_art_factor * mean_estimate
         diff = torch.maximum(self.epsilon, (self.second_moment - self.shift * self.shift))
-        self.scale.data = torch.sqrt(diff)
+        self.scale.data = torch.minimum(torch.sqrt(diff), torch.tensor(1e6))  # clamp scale values
 
         # then update weights of norm layer
         self.norm_layer.weight.data = (old_scale / self.scale) * self.norm_layer.weight
