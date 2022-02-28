@@ -28,13 +28,28 @@ def visualize_statistics(
         save_dest: Optional[Union[str, Path]] = None,
         x_lim: Optional[Tuple[float, float]] = None,
         y_lim: Optional[Tuple[float, float]] = None,
-        smoothing_factor: int = 1,  # how many points to average to single new point
+        smoothing_factor: int = 1,
 ):
+
+    """
+    Plots given analysed experiment data (statistics) and saves the plotted data.
+    x-axis represents the training steps and y-axis represents the mean and confidence interval
+    of average return for current training step.
+
+    statistics: Experiment statistics which are computed in analyse_experiment.
+    save_dest: Path to where the plot is to be saved.
+    x_lim: The limit of x-axis in the plot.
+    y_lim: The limit of y-axis in the plot.
+    smoothing_factor: How many points to average to single new point.
+    """
+
+    #Setup plot
     plt.clf()
     plt.figure(figsize=(8, 8), dpi=200)
     plt.xlabel("Steps")
     plt.ylabel("Average return")
 
+    #Fill plot with the given statistics
     for name, stats in statistics.items():
         x = stats[:, 0]
         y = smooth(stats[:, 1], smoothing_factor=smoothing_factor)
@@ -49,6 +64,7 @@ def visualize_statistics(
     if y_lim is not None:
         plt.ylim(y_lim)
 
+    #Show and save plot
     plt.legend()
     if save_dest is not None:
         plt.savefig(f"{save_dest}.png")
@@ -56,6 +72,14 @@ def visualize_statistics(
 
 
 def analyse_experiments(data_paths: List[Union[str, Path]]) -> np.ndarray:
+    """"
+    Computes the means and confidence intervals of the data points for a given experiment.
+    data_paths: Paths to the files containing the experiment data. The data paths should refer
+    to csv files created by logging.perform_experiment.
+
+    returns: A list containing tuples of current step, mean at that step, upper bound, lower bound (of confidence
+    interval of average return at that step) of experiment data
+    """
     # Read experiment data from files
     data = []
     num_data_points = None
@@ -69,6 +93,8 @@ def analyse_experiments(data_paths: List[Union[str, Path]]) -> np.ndarray:
         f.close()
         if num_data_points is None:
             num_data_points = len(data_single_exp)
+
+        #Check data consistency
         if num_data_points != len(data_single_exp):
             raise ValueError(
                 f"Data format is invalid: The amount of data points in {data_path}.csv "
