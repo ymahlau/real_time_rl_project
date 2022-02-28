@@ -14,11 +14,11 @@ SIDE_ACCELERATION = 1  # [m/s^2]  acc of thruster sideways
 
 PLAYGROUND_WIDTH = 150  # [m]
 PLAYGROUND_HEIGHT = 100  # [m]
-LANDING_PAD_WIDTH = 20
+LANDING_PAD_WIDTH = 40
 
-CRASH_THRESHOLD_X = 1  # [m/s] terminal sideways velocity on impact, which would make spacecraft fall over
-CRASH_THRESHOLD_Y = 4  # [m/s] terminal velocity on impact
-START_OFFSET_X = 5  # this outer region cannot be y start position
+CRASH_THRESHOLD_X = 2  # [m/s] terminal sideways velocity on impact, which would make spacecraft fall over
+CRASH_THRESHOLD_Y = 6  # [m/s] terminal velocity on impact
+START_OFFSET_X = 30  # this outer region cannot be x start position
 START_OFFSET_Y = 5  # start this offset lower than max height
 
 # render constants
@@ -81,9 +81,9 @@ class CustomLunarLander(gym.Env):
     def reset(self) -> np.ndarray:
         self.state = np.asarray(
             [
-                random.randint(int(-PLAYGROUND_WIDTH / 2) + START_OFFSET_Y,
-                               int(PLAYGROUND_WIDTH / 2) - START_OFFSET_Y),
-                PLAYGROUND_HEIGHT - START_OFFSET_X,
+                random.randint(int(-PLAYGROUND_WIDTH / 2) + START_OFFSET_X,
+                               int(PLAYGROUND_WIDTH / 2) - START_OFFSET_X),
+                PLAYGROUND_HEIGHT - START_OFFSET_Y,
                 0,
                 0,
             ], dtype=float)
@@ -201,6 +201,7 @@ class CustomLunarLander(gym.Env):
             (255, 0, 0),
         )
 
+        # Finish
         self.screen.blit(canvas, (0, 0))
         pygame.display.flip()
         time.sleep(1 / EXPECTED_FPS)
