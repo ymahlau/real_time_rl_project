@@ -9,7 +9,7 @@ from pygame import gfxdraw
 
 # physics constants
 GRAVITY = 1.62  # [m/s^2] moon gravity
-UP_ACCELERATION = 3  # [m/s^2] acc of thruster upwards
+UP_ACCELERATION = 2.5  # [m/s^2] acc of thruster upwards
 SIDE_ACCELERATION = 1  # [m/s^2]  acc of thruster sideways
 
 PLAYGROUND_WIDTH = 150  # [m]
@@ -19,7 +19,7 @@ LANDING_PAD_WIDTH = 40
 CRASH_THRESHOLD_X = 2  # [m/s] terminal sideways velocity on impact, which would make spacecraft fall over
 CRASH_THRESHOLD_Y = 6  # [m/s] terminal velocity on impact
 START_OFFSET_X = 30  # this outer region cannot be x start position
-START_OFFSET_Y = 5  # start this offset lower than max height
+START_OFFSET_Y = 20  # start this offset lower than max height
 
 # render constants
 SCREEN_WIDTH = 750
@@ -27,12 +27,14 @@ SCREEN_HEIGHT = 500
 EXPECTED_FPS = 100
 
 # Gym Constants
-OOB_REWARD = -200  # reward for out of bounds
-SUCCESS_REWARD = 200
-CRASH_REWARD_X = -50  # reward for crashing by having too high sideways velocity on impact
-CRASH_REWARD_Y = -50  # reward for crashing by falling to fast
-SMOOTH_LANDING_FACTOR = -1  # Factor for rewarding smooth landing
-LIVING_REWARD_FACTOR = -1  # Factor for constant negative reward while playing
+OOB_REWARD = -250  # reward for out of bounds
+SUCCESS_REWARD = 210
+CRASH_REWARD_X = -10  # reward for crashing by having too high sideways velocity on impact
+CRASH_REWARD_Y = -100  # reward for crashing by falling to fast
+SMOOTH_LANDING_FACTOR = -10  # Factor for rewarding smooth landing
+BOOSTER_REWARD_FACTOR = 0  # Factor for constant negative reward while playing
+LONG_TIME_REWARD = -50  # reward if max time is elapsed
+MAX_PLAY_TIME = 50
 
 
 class CustomLunarLander(gym.Env):
@@ -61,7 +63,7 @@ class CustomLunarLander(gym.Env):
     The only positive reward is obtained by hitting the landing pad. There is negative reward for crashing due to
     out of bounds, crashing due to hitting ground with too high x or y velocity (set by threshold).
     Additionally, a smooth negative reward proportional to the terminal x and y velocity is present.
-    A negative living reward incentivizes the agent to finish fast.
+    A negative reward for using booster incentivizes the agent to finish fast.
     """
 
     def __init__(self, step_size: float):
@@ -72,6 +74,7 @@ class CustomLunarLander(gym.Env):
         self.state = None
 
         self.step_size = step_size  # seconds
+        self.num_steps = 0
 
         # GUI only
         self.screen = None
@@ -87,6 +90,7 @@ class CustomLunarLander(gym.Env):
                 0,
                 0,
             ], dtype=float)
+        self.num_steps = 0
         return self.state
 
     def step(self, action: int) -> Tuple[list, float, bool, dict]:
@@ -121,6 +125,10 @@ class CustomLunarLander(gym.Env):
         # Landed
         reward = 0
         info = ''
+
+        if action != 0:
+            reward += BOOSTER_REWARD_FACTOR * self.step_size
+
         if self.state[1] <= 0:
             # test if landed on pad
             if -LANDING_PAD_WIDTH / 2 < self.state[0] < LANDING_PAD_WIDTH / 2:
@@ -134,13 +142,18 @@ class CustomLunarLander(gym.Env):
             if self.state[3] < -CRASH_THRESHOLD_Y:
                 reward += CRASH_REWARD_Y
                 info += ' -y_crash'
-            # Additional smooth reward for landing softly in x and y direction
-            reward += SMOOTH_LANDING_FACTOR * abs(self.state[2])
+            # Additional smooth reward for landing softly in x and y direction, EDIT: only y
+            # reward += SMOOTH_LANDING_FACTOR * abs(self.state[2])
             reward += SMOOTH_LANDING_FACTOR * abs(self.state[3])
             return self.state, reward, True, {'info_str': info}
 
+        # Test if max play time is over
+        if self.num_steps * self.step_size > MAX_PLAY_TIME:
+            reward += LONG_TIME_REWARD
+            return self.state, reward, True, {}
+
         # Nothing happened
-        reward = LIVING_REWARD_FACTOR * self.step_size
+        self.num_steps += 1
         return self.state, reward, False, {}
 
     def render(self, mode: str = 'human'):

@@ -14,7 +14,6 @@ def perform_experiment(
         track_rate: int = 100,  # how many steps until data point is collected
         iter_per_track: int = 100,  # how many iterations per data point collection
 ):
-
     """
         Performs an experiment on the given Actor-Critic algorithm.
         The given algorithm is trained for num_steps. During training every track_rate steps the

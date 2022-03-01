@@ -24,6 +24,7 @@ def smooth(array: np.ndarray, smoothing_factor: int) -> np.ndarray:
     result = np.asarray(x)
     return result
 
+
 def visualize_statistics(
         statistics: Dict[str, np.ndarray],
         save_dest: Optional[Union[str, Path]] = None,
@@ -31,7 +32,6 @@ def visualize_statistics(
         y_lim: Optional[Tuple[float, float]] = None,
         smoothing_factor: int = 1,
 ):
-
     """
     Plots given analysed experiment data (statistics) and saves the plotted data.
     x-axis represents the training steps and y-axis represents the mean and confidence interval
@@ -44,13 +44,13 @@ def visualize_statistics(
     smoothing_factor: How many points to average to single new point.
     """
 
-    #Setup plot
+    # Setup plot
     plt.clf()
     plt.figure(figsize=(8, 8), dpi=200)
     plt.xlabel("Steps")
     plt.ylabel("Average return")
 
-    #Fill plot with the given statistics
+    # Fill plot with the given statistics
     for name, stats in statistics.items():
         x = stats[:, 0]
         y = smooth(stats[:, 1], smoothing_factor=smoothing_factor)
@@ -65,7 +65,7 @@ def visualize_statistics(
     if y_lim is not None:
         plt.ylim(y_lim)
 
-    #Show and save plot
+    # Show and save plot
     plt.legend()
     if save_dest is not None:
         plt.savefig(f"{save_dest}.png")
@@ -95,7 +95,7 @@ def analyse_experiments(data_paths: List[Union[str, Path]]) -> np.ndarray:
         if num_data_points is None:
             num_data_points = len(data_single_exp)
 
-        #Check data consistency
+        # Check data consistency
         if num_data_points != len(data_single_exp):
             raise ValueError(
                 f"Data format is invalid: The amount of data points in {data_path}.csv "
@@ -121,6 +121,7 @@ def analyse_experiments(data_paths: List[Union[str, Path]]) -> np.ndarray:
 
     return statistics
 
+
 def total_regret(stats: np.ndarray, max_return: float) -> Tuple[float, float, float]:
     """
     Computes the total regret of a given statistics array.
@@ -141,9 +142,6 @@ def total_regret(stats: np.ndarray, max_return: float) -> Tuple[float, float, fl
     upper_regret = np.sum(np.clip(max_return - y_lower, 0, None)).item()
 
     return avg_regret, lower_regret, upper_regret
-
-
-
 
 
 """

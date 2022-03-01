@@ -1,5 +1,5 @@
 import sys
-from typing import Union, Type
+from typing import Union, Type, Dict, Optional
 
 import gym
 
@@ -21,6 +21,9 @@ def experiment_rtac(env: gym.Env,
                     use_shared: bool = False,
                     iter_per_track: int = 100,
                     use_device: bool = True,
+                    network_kwargs: Optional[Dict] = None,
+                    lr: float = 0.0003,
+                    entropy_scale: float = 0.2,
                     ):
     _experiment(
         env=env,
@@ -36,7 +39,10 @@ def experiment_rtac(env: gym.Env,
         use_shared=use_shared,
         use_rtmdp=True,
         iter_per_track=iter_per_track,
-        use_device=use_device
+        use_device=use_device,
+        network_kwargs=network_kwargs,
+        lr=lr,
+        entropy_scale=entropy_scale,
     )
 
 
@@ -52,6 +58,9 @@ def experiment_sac(env: gym.Env,
                    use_rtmdp: bool = False,
                    iter_per_track: int = 100,
                    use_device: bool = True,
+                   network_kwargs: Optional[Dict] = None,
+                   lr: float = 0.0003,
+                   entropy_scale: float = 0.2,
                    ):
     _experiment(
         env=env,
@@ -68,6 +77,9 @@ def experiment_sac(env: gym.Env,
         use_rtmdp=use_rtmdp,
         iter_per_track=iter_per_track,
         use_device=use_device,
+        network_kwargs=network_kwargs,
+        lr=lr,
+        entropy_scale=entropy_scale,
     )
 
 
@@ -85,11 +97,16 @@ def _experiment(env: Union[gym.Env, RTMDP],
                 use_rtmdp: bool = False,
                 iter_per_track: int = 100,
                 use_device: bool = True,
+                network_kwargs: Optional[Dict] = None,
+                lr: float = 0.0003,
+                entropy_scale: float = 0.2,
                 ):
+    if network_kwargs is None:
+        network_kwargs = {}
+
     print(f'Start experiment {name} with seed {seed} and agent {agent.__name__}')
 
     suffix = ''
-    network_kwargs = {}
     if use_target:
         suffix += '-target'
     if use_double:
@@ -107,7 +124,7 @@ def _experiment(env: Union[gym.Env, RTMDP],
         eval_env = RTMDP(eval_env, 0)
 
     alg = agent(env, network_kwargs=network_kwargs, eval_env=eval_env, seed=seed, use_target=use_target,
-                use_device=use_device)
+                use_device=use_device, lr=lr, entropy_scale=entropy_scale)
 
     # saved with name "{agents name}-S{seed}-T{number of data points}-{used variation}"
     # at directory "/experiment_data/{experiment name}"
@@ -148,7 +165,7 @@ def main(seed: int = 0):
 
 
 if __name__ == '__main__':
-    if len(sys.argv[0]) > 1:
+    if len(sys.argv) > 1:
         main(int(sys.argv[1]))
     else:
         main()
