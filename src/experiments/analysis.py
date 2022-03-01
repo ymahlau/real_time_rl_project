@@ -1,3 +1,4 @@
+import math
 from pathlib import Path
 from typing import List, Any, Union, Dict, Optional, Tuple
 import numpy as np
@@ -12,8 +13,8 @@ def smooth(array: np.ndarray, smoothing_factor: int) -> np.ndarray:
     """
     n = len(array)
     indices = np.arange(0, n)
-    lower_idx = np.maximum(indices - int(smoothing_factor / 2), 0)
-    upper_idx = np.minimum(indices + int(smoothing_factor / 2), n-1)
+    lower_idx = np.maximum(indices - math.floor(smoothing_factor / 2), 0)
+    upper_idx = np.minimum(indices + math.ceil(smoothing_factor / 2), n)
 
     x = [
         np.mean(array[lower_idx[i]:upper_idx[i]]).item()
