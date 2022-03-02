@@ -24,6 +24,7 @@ def experiment_rtac(env: gym.Env,
                     network_kwargs: Optional[Dict] = None,
                     lr: float = 0.0003,
                     entropy_scale: float = 0.2,
+                    flags: Optional[str] = None,
                     ):
     _experiment(
         env=env,
@@ -43,6 +44,7 @@ def experiment_rtac(env: gym.Env,
         network_kwargs=network_kwargs,
         lr=lr,
         entropy_scale=entropy_scale,
+        flags=flags,
     )
 
 
@@ -61,6 +63,7 @@ def experiment_sac(env: gym.Env,
                    network_kwargs: Optional[Dict] = None,
                    lr: float = 0.0003,
                    entropy_scale: float = 0.2,
+                   flags: Optional[str] = None,
                    ):
     _experiment(
         env=env,
@@ -80,6 +83,7 @@ def experiment_sac(env: gym.Env,
         network_kwargs=network_kwargs,
         lr=lr,
         entropy_scale=entropy_scale,
+        flags=flags,
     )
 
 
@@ -100,6 +104,7 @@ def _experiment(env: Union[gym.Env, RTMDP],
                 network_kwargs: Optional[Dict] = None,
                 lr: float = 0.0003,
                 entropy_scale: float = 0.2,
+                flags: Optional[str] = None,
                 ):
     if network_kwargs is None:
         network_kwargs = {}
@@ -122,6 +127,9 @@ def _experiment(env: Union[gym.Env, RTMDP],
         suffix += '-rtmdp'
         env = RTMDP(env, 0)
         eval_env = RTMDP(eval_env, 0)
+
+    if flags is not None:
+        suffix += flags
 
     alg = agent(env, network_kwargs=network_kwargs, eval_env=eval_env, seed=seed, use_target=use_target,
                 use_device=use_device, lr=lr, entropy_scale=entropy_scale)
