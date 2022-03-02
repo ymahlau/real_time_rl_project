@@ -9,7 +9,11 @@ from src.agents import ActorCritic
 
 
 class RTAC(ActorCritic):
+    """
+    Implementation of the Real-Time actor critic presented in the following paper:
+    https://arxiv.org/abs/1911.04448
 
+    """
     def __init__(
             self,
             env: gym.Env,
@@ -87,6 +91,9 @@ class RTAC(ActorCritic):
         return flattened_obs
 
     def value_loss(self, samples: Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]) -> Tensor:
+        """
+        Value loss as in Equation 13 in the paper
+        """
         # states x_t = (s_t, a_t), obs is the concatenated state and value
         current_obs = samples[0]
         dist_current_obs = self.network.get_action_distribution(current_obs)  # pi(a | s_t, a_t)
@@ -132,6 +139,9 @@ class RTAC(ActorCritic):
         return value_loss
 
     def policy_loss(self, samples: Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]) -> Tensor:
+        """
+        Policy loss as in Equation 10 of the paper
+        """
         # states x_t = (s_t, a_t), obs is the concatenated state and value
         current_obs = samples[0]
         dist_current_obs = self.network.get_action_distribution(current_obs)  # pi(a | s_t, a_t)

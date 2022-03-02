@@ -6,8 +6,9 @@ from torch.distributions import Categorical
 
 
 class Network(nn.Module):
-    """Neural network with variable dimensions"""
-
+    """
+    Multilayer Perceptron with variable dimensions
+    """
     def __init__(self, input_size: int, output_size: int, hidden_size: int = 256, num_layers: int = 2):
         super().__init__()
 
@@ -59,7 +60,11 @@ class Network(nn.Module):
 
 
 class PolicyValueNetwork(nn.Module):
-
+    """
+    Network wrapper containing both the policy and value network.
+    Optionally, the networks may share parameters or there may be 2 value networks.
+    Another optional modification is a normalized output for the value network.
+    """
     def __init__(
             self,
             value_input_size: int,
@@ -127,6 +132,9 @@ class PolicyValueNetwork(nn.Module):
         self.second_moment: nn.Parameter = nn.Parameter(torch.tensor(1).float(), requires_grad=False)  # nu
 
     def get_action_distribution(self, state: Tensor) -> Tensor:
+        """
+        Get the action distribution of the policy network
+        """
         if self.shared_parameters:
             feature_vals = self.features(state)
             feature_vals = F.relu(feature_vals)
@@ -142,6 +150,9 @@ class PolicyValueNetwork(nn.Module):
             raise ValueError('Softmax of tensors with three or more dims not supported')
 
     def act(self, state: Tensor) -> int:
+        """
+        Act upon the given state using the policy network
+        """
         act_dist = self.get_action_distribution(state)
 
         if torch.isnan(act_dist).any().item():
@@ -151,6 +162,9 @@ class PolicyValueNetwork(nn.Module):
         return chosen_action
 
     def get_value(self, state: Tensor) -> Tensor:
+        """
+        Use the value network to compute a value for the given state
+        """
         # feature values
         if self.shared_parameters:
             feature_vals = self.features(state)
@@ -173,12 +187,18 @@ class PolicyValueNetwork(nn.Module):
         return value_result
 
     def unnormalize(self, value: Tensor) -> Tensor:
+        """
+        Normalize the given value function using Pop-Art Normalization
+        """
         if not self.normalized:
             raise AttributeError('Cannot unnormalize if network is not normalized')
         new_value = value * self.scale + self.shift
         return new_value
 
     def normalize(self, value: Tensor) -> Tensor:
+        """
+        Inverse Normalization function.
+        """
         if not self.normalized:
             raise AttributeError('Cannot normalize if network is not normalized')
         new_value = (value - self.shift) / self.scale
@@ -186,6 +206,9 @@ class PolicyValueNetwork(nn.Module):
 
     @torch.no_grad()
     def update_normalization(self, new_values: Tensor):
+        """
+        Update the normalization parameters using a new batch of values.
+        """
         if not self.normalized:
             raise AttributeError('Cannot update normalization if normalization is False')
 

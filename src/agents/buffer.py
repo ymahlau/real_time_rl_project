@@ -7,7 +7,10 @@ from src.utils.utils import get_device
 
 
 class ReplayBuffer:
-
+    """
+    Replay buffer for experience replay. If the parameter use_device is set to true and cuda is available on the device,
+    the whole buffer is placed in cuda memory to speed up training.
+    """
     def __init__(self, obs_len: int, capacity: int = 10000, seed: Optional[int] = None, use_device: bool = False):
         self.obs_len = obs_len
         self.capacity = capacity
@@ -58,6 +61,10 @@ class ReplayBuffer:
         self.num_items = min(self.capacity, self.num_items + 1)
 
     def sample(self, sample_size: int) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
+        """
+        Return value has the same format as add_data input:
+        data = (state, action, reward, next_state, done)
+        """
         sampled_idx = torch.randint(0, self.num_items,
                                     size=(sample_size,),
                                     generator=self.generator,

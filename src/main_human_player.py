@@ -22,7 +22,6 @@ def evaluate_keyboard_input() -> int:
 
 def play_custom_lunar_lander():
     env = CustomLunarLander(step_size=0.1)
-    keyboard.on_press_key("r", lambda _: print("You pressed r"))
     while True:
         cum_reward = 0
         num_steps = 0

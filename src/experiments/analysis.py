@@ -31,6 +31,7 @@ def visualize_statistics(
         x_lim: Optional[Tuple[float, float]] = None,
         y_lim: Optional[Tuple[float, float]] = None,
         smoothing_factor: int = 1,
+        show: bool = True,
 ):
     """
     Plots given analysed experiment data (statistics) and saves the plotted data.
@@ -69,7 +70,8 @@ def visualize_statistics(
     plt.legend()
     if save_dest is not None:
         plt.savefig(f"{save_dest}.png")
-    plt.show()
+    if show:
+        plt.show()
 
 
 def analyse_experiments(data_paths: List[Union[str, Path]]) -> np.ndarray:

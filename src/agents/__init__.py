@@ -13,6 +13,12 @@ from src.agents.networks import PolicyValueNetwork
 from src.utils.utils import moving_average, get_device
 
 class ActorCritic(ABC):
+    """
+    Abstract superclass for ActorCritic methods, i.e. SAC and RTAC.
+
+    For training call train(), which can optionally track stats during training. The model can be saved using
+    load_network() and save_network().
+    """
     def __init__(
             self,
             env: gym.Env,
@@ -80,29 +86,43 @@ class ActorCritic(ABC):
         self.mse_loss = nn.MSELoss().to(self.device)
 
     def act(self, obs: Any) -> int:
+        """
+        Let the agent act on the given state
+        """
         obs_tensor = self.obs_to_tensor(obs)
         action = self.network.act(obs_tensor)
         return action
 
     def get_action_distribution(self, obs: Any) -> Tensor:
+        """
+        Get the action probability of the agent for the given state
+        """
         obs_tensor = self.obs_to_tensor(obs)
         dist = self.network.get_action_distribution(obs_tensor)
         return dist
 
     @abstractmethod
     def get_value(self, obs: Any) -> Tensor:
+        """
+        Get the value of the given state. This method is necessary since SAC and RTAC have different state
+        representations
+        """
         pass
 
     @abstractmethod
     def obs_to_tensor(self, obs: Any) -> Tensor:
+        """
+        Convert an observation to a tensor. This method is necessary since SAC and RTAC have different state
+        representations
+        """
         pass
 
     def load_network(self, checkpoint: str):
         """
-            Loads the model with parameters contained in the files in the
-            path checkpoint.
+        Loads the model with parameters contained in the files in the
+        path checkpoint.
 
-            checkpoint: Absolute path without ending to the two files the model is saved in.
+        checkpoint: Absolute path without ending to the two files the model is saved in.
         """
         self.network.load_state_dict(torch.load(f"{checkpoint}.pt"))
         if self.use_target:
@@ -111,8 +131,8 @@ class ActorCritic(ABC):
 
     def save_network(self, log_dest: str):
         """
-           Saves the model with parameters to the files referred to by the file path log_dest.
-           log_dest: Absolute path without ending to the two files the model is to be saved in.
+       Saves the model with parameters to the files referred to by the file path log_dest.
+       log_dest: Absolute path without ending to the two files the model is to be saved in.
         """
         file_dst = f"{log_dest}.pt"
 
@@ -120,6 +140,9 @@ class ActorCritic(ABC):
         print("Saved current training progress")
 
     def all_state_action_pairs(self, state: Tensor) -> Tensor:
+        """
+        helper method for training
+        """
         # shape (batch, num_act, num_states)
         state_expanded = state[:, None, :].expand(-1, self.num_actions, -1)
         # shape = (batch, num_act, num_act)
@@ -132,6 +155,9 @@ class ActorCritic(ABC):
         return flattened
 
     def handle_normalization(self, targets: Tensor):
+        """
+        helper method to update the normalization parameter and normalize the target
+        """
         # update normalization parameters
         self.network.update_normalization(targets)
         if self.use_target:
@@ -154,6 +180,9 @@ class ActorCritic(ABC):
         pass
 
     def update(self, samples: Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]):
+        """
+        Update the agents network using the given samples
+        """
         self.optim.zero_grad()
         value_loss = self.value_loss(samples)
         policy_loss = self.policy_loss(samples)

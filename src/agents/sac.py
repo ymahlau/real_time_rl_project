@@ -9,6 +9,11 @@ from src.agents import ActorCritic
 
 
 class SAC(ActorCritic):
+    """
+    Soft Actor Critic using Entropy to manage Exploration and Exploitation. Originally presented in the paper:
+    https://arxiv.org/abs/1801.01290
+
+    """
     def __init__(
             self,
             env: gym.Env,
@@ -78,6 +83,9 @@ class SAC(ActorCritic):
         return value
 
     def value_loss(self, samples: Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]):
+        """
+        Compute Value loss of SAC for the given batch of samples
+        """
         states = samples[0]
         actions = samples[1]
         rewards = samples[2]
@@ -126,6 +134,9 @@ class SAC(ActorCritic):
         return loss
 
     def policy_loss(self, samples: Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]):
+        """
+        Compute policy loss of SAC for the given batch of samples
+        """
         states = samples[0]
         dist_current_obs = self.network.get_action_distribution(states)
         dist_current_obs_clamped = torch.clamp(dist_current_obs, min=self.network.epsilon)
