@@ -21,7 +21,7 @@ def evaluate_keyboard_input() -> int:
     return 0
 
 def play_custom_lunar_lander():
-    env = CustomLunarLander(step_size=0.1)
+    env = CustomLunarLander(step_size=0.2)
     while True:
         cum_reward = 0
         num_steps = 0

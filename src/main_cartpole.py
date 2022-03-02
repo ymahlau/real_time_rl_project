@@ -48,6 +48,10 @@ def main(seed: int = 0):
     experiment_rtac(gym.make('CartPole-v1'), gym.make('CartPole-v1'), 'CartPole', seed=seed,
                     iter_per_track=iter_per_track, use_shared=True)
 
+    # k
+    experiment_rtac(gym.make('CartPole-v1'), gym.make('CartPole-v1'), 'CartPole', seed=seed,
+                    iter_per_track=iter_per_track, use_shared=True, use_normalization=True)
+
 
 if __name__ == '__main__':
     if len(sys.argv[0]) > 1:

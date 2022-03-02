@@ -10,15 +10,15 @@ from pygame import gfxdraw
 # physics constants
 GRAVITY = 1.62  # [m/s^2] moon gravity
 UP_ACCELERATION = 2.5  # [m/s^2] acc of thruster upwards
-SIDE_ACCELERATION = 1  # [m/s^2]  acc of thruster sideways
+SIDE_ACCELERATION = 2  # [m/s^2]  acc of thruster sideways
 
-PLAYGROUND_WIDTH = 150  # [m]
+PLAYGROUND_WIDTH = 200  # [m]
 PLAYGROUND_HEIGHT = 100  # [m]
-LANDING_PAD_WIDTH = 40
+LANDING_PAD_WIDTH = 30
 
 CRASH_THRESHOLD_X = 2  # [m/s] terminal sideways velocity on impact, which would make spacecraft fall over
 CRASH_THRESHOLD_Y = 6  # [m/s] terminal velocity on impact
-START_OFFSET_X = 30  # this outer region cannot be x start position
+START_OFFSET_X = 10  # this outer region cannot be x start position
 START_OFFSET_Y = 20  # start this offset lower than max height
 
 # render constants
@@ -26,16 +26,17 @@ SCREEN_WIDTH = 750
 SCREEN_HEIGHT = 500
 EXPECTED_FPS = 100
 
-# Gym Constants
-OOB_REWARD = -250  # reward for out of bounds
+OOB_REWARD = -50  # reward for out of bounds
 SUCCESS_REWARD = 210
-CRASH_REWARD_X = -10  # reward for crashing by having too high sideways velocity on impact
-CRASH_REWARD_Y = -100  # reward for crashing by falling to fast
-SMOOTH_LANDING_FACTOR = -10  # Factor for rewarding smooth landing
-BOOSTER_REWARD_FACTOR = 0  # Factor for constant negative reward while playing
+PAD_DISTANCE_REWARD = -3  # factor for landing closer to center
 LONG_TIME_REWARD = -50  # reward if max time is elapsed
 MAX_PLAY_TIME = 50
 
+# Additional Rewards not used because it made the environment too difficult
+CRASH_REWARD_X = 0  # reward for crashing by having too high sideways velocity on impact
+CRASH_REWARD_Y = 0  # reward for crashing by falling to fast
+SMOOTH_LANDING_FACTOR = 0  # Factor for rewarding smooth landing
+BOOSTER_REWARD_FACTOR = 0  # Factor for constant negative reward while playing
 
 class CustomLunarLander(gym.Env):
     """
@@ -145,11 +146,13 @@ class CustomLunarLander(gym.Env):
             # Additional smooth reward for landing softly in x and y direction, EDIT: only y
             # reward += SMOOTH_LANDING_FACTOR * abs(self.state[2])
             reward += SMOOTH_LANDING_FACTOR * abs(self.state[3])
+            reward += PAD_DISTANCE_REWARD * abs(self.state[0])
             return self.state, reward, True, {'info_str': info}
 
         # Test if max play time is over
         if self.num_steps * self.step_size > MAX_PLAY_TIME:
             reward += LONG_TIME_REWARD
+            reward += PAD_DISTANCE_REWARD * abs(self.state[0])
             return self.state, reward, True, {}
 
         # Nothing happened

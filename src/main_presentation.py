@@ -20,7 +20,7 @@ def vanilla_plots(img_counter: int):
     visualize_statistics({'SAC in E': sac_stats_acrobot, 'RTAC': rtac_stats_acrobot,
                           'SAC in RTMDP': sac_rtmdp_stats_acrobot},
                          save_dest=img_folder / f'{img_counter:02d}_vanilla_acrobot',
-                         x_lim=(10000, 100000), smoothing_factor=2, show=False)
+                         x_lim=(10000, 30000), smoothing_factor=2, show=False)
 
     img_counter += 1
     sac_stats_cartpole = analyse_experiments([data_folder / 'CartPole' / name for name in sac_names])
@@ -29,7 +29,7 @@ def vanilla_plots(img_counter: int):
     visualize_statistics({'SAC in E': sac_stats_cartpole, 'RTAC': rtac_stats_cartpole,
                           'SAC in RTMDP': sac_rtmdp_stats_cartpole},
                          save_dest=img_folder / f'{img_counter:02d}_vanilla_cartpole',
-                         x_lim=(10000, 100000), smoothing_factor=10, show=False)
+                         x_lim=(10000, 100000), smoothing_factor=50, show=False)
 
     img_counter += 1
     sac_names = [f'SAC-S{seed}-T600' for seed in range(5)]
@@ -41,7 +41,7 @@ def vanilla_plots(img_counter: int):
     visualize_statistics({'SAC in E': sac_stats_lunar, 'RTAC': rtac_stats_lunar,
                           'SAC in RTMDP': sac_rtmdp_stats_lunar},
                          save_dest=img_folder / f'{img_counter:02d}_vanilla_lunar', y_lim=(-200, 200),
-                         x_lim=(10000, 300000), smoothing_factor=10, show=False)
+                         x_lim=(10000, 300000), smoothing_factor=50, show=False)
     return img_counter
 
 
@@ -66,19 +66,19 @@ def extensions_single(img_counter):
     img_counter += 1
     visualize_statistics({'SAC RTMDP Vanilla': sac_vanilla_lunar, 'SAC RTMDP + Target': sac_target_lunar},
                          save_dest=img_folder / f'{img_counter:02d}_sac_rtmdp_target_lunar', y_lim=(-200, 250),
-                         x_lim=(10000, 300000), smoothing_factor=10, show=False)
+                         x_lim=(10000, 300000), smoothing_factor=50, show=False)
     img_counter += 1
     visualize_statistics({'RTAC Vanilla': rtac_vanilla_lunar, 'RTAC + Target': rtac_target_lunar},
                          save_dest=img_folder / f'{img_counter:02d}_rtac_target_lunar', y_lim=(-200, 250),
-                         x_lim=(10000, 300000), smoothing_factor=10, show=False)
+                         x_lim=(10000, 300000), smoothing_factor=50, show=False)
     img_counter += 1
     visualize_statistics({'SAC RTMDP Vanilla': sac_vanilla_cart, 'SAC RTMDP + Target': sac_target_cart},
                          save_dest=img_folder / f'{img_counter:02d}_sac_rtmdp_target_cart', y_lim=(-200, 600),
-                         x_lim=(10000, 100000), smoothing_factor=5, show=False)
+                         x_lim=(10000, 100000), smoothing_factor=20, show=False)
     img_counter += 1
     visualize_statistics({'RTAC Vanilla': rtac_vanilla_cart, 'RTAC + Target': rtac_target_cart},
                          save_dest=img_folder / f'{img_counter:02d}_rtac_target_cart', y_lim=(-200, 600),
-                         x_lim=(10000, 100000), smoothing_factor=5, show=False)
+                         x_lim=(10000, 100000), smoothing_factor=20, show=False)
 
     # double value data
     sac_double_lunar = analyse_experiments([data_folder / 'LunarLander' / f'SAC-S{s}-T600-double-rtmdp'
@@ -94,19 +94,19 @@ def extensions_single(img_counter):
     img_counter += 1
     visualize_statistics({'SAC RTMDP Vanilla': sac_vanilla_lunar, 'SAC RTMDP + Double Value': sac_double_lunar},
                          save_dest=img_folder / f'{img_counter:02d}_sac_rtmdp_double_lunar', y_lim=(-200, 250),
-                         x_lim=(10000, 300000), smoothing_factor=10, show=False)
+                         x_lim=(10000, 300000), smoothing_factor=50, show=False)
     img_counter += 1
     visualize_statistics({'RTAC Vanilla': rtac_vanilla_lunar, 'RTAC + Double Value': rtac_double_lunar},
                          save_dest=img_folder / f'{img_counter:02d}_rtac_double_lunar', y_lim=(-200, 250),
-                         x_lim=(10000, 300000), smoothing_factor=10, show=False)
+                         x_lim=(10000, 300000), smoothing_factor=50, show=False)
     img_counter += 1
     visualize_statistics({'SAC RTMDP Vanilla': sac_vanilla_cart, 'SAC RTMDP + Double Value': sac_double_cart},
                          save_dest=img_folder / f'{img_counter:02d}_sac_rtmdp_double_cart', y_lim=(-200, 600),
-                         x_lim=(10000, 100000), smoothing_factor=5, show=False)
+                         x_lim=(10000, 100000), smoothing_factor=20, show=False)
     img_counter += 1
     visualize_statistics({'RTAC Vanilla': rtac_vanilla_cart, 'RTAC + Double Value': rtac_double_cart},
                          save_dest=img_folder / f'{img_counter:02d}_rtac_double_cart', y_lim=(-200, 600),
-                         x_lim=(10000, 100000), smoothing_factor=5, show=False)
+                         x_lim=(10000, 100000), smoothing_factor=20, show=False)
 
     # normalization data
     sac_norm_lunar = analyse_experiments([data_folder / 'LunarLander' / f'SAC-S{s}-T600-norm-rtmdp'
@@ -122,19 +122,19 @@ def extensions_single(img_counter):
     img_counter += 1
     visualize_statistics({'SAC RTMDP Vanilla': sac_vanilla_lunar, 'SAC RTMDP + Norm': sac_norm_lunar},
                          save_dest=img_folder / f'{img_counter:02d}_sac_rtmdp_norm_lunar', y_lim=(-200, 250),
-                         x_lim=(10000, 300000), smoothing_factor=10, show=False)
+                         x_lim=(10000, 300000), smoothing_factor=50, show=False)
     img_counter += 1
     visualize_statistics({'RTAC Vanilla': rtac_vanilla_lunar, 'RTAC + Norm': rtac_norm_lunar},
                          save_dest=img_folder / f'{img_counter:02d}_rtac_norm_lunar', y_lim=(-200, 250),
-                         x_lim=(10000, 300000), smoothing_factor=10, show=False)
+                         x_lim=(10000, 300000), smoothing_factor=50, show=False)
     img_counter += 1
     visualize_statistics({'SAC RTMDP Vanilla': sac_vanilla_cart, 'SAC RTMDP + Norm': sac_norm_cart},
                          save_dest=img_folder / f'{img_counter:02d}_sac_rtmdp_norm_cart', y_lim=(-200, 600),
-                         x_lim=(10000, 100000), smoothing_factor=5, show=False)
+                         x_lim=(10000, 100000), smoothing_factor=20, show=False)
     img_counter += 1
     visualize_statistics({'RTAC Vanilla': rtac_vanilla_cart, 'RTAC + Norm': rtac_norm_cart},
                          save_dest=img_folder / f'{img_counter:02d}_rtac_norm_cart', y_lim=(-200, 600),
-                         x_lim=(10000, 100000), smoothing_factor=5, show=False)
+                         x_lim=(10000, 100000), smoothing_factor=20, show=False)
 
     # shared data
     rtac_shared_lunar = analyse_experiments([data_folder / 'LunarLander' / f'RTAC-S{s}-T600-shared-rtmdp'
@@ -146,11 +146,11 @@ def extensions_single(img_counter):
     img_counter += 1
     visualize_statistics({'RTAC Vanilla': rtac_vanilla_lunar, 'RTAC + Shared Params': rtac_shared_lunar},
                          save_dest=img_folder / f'{img_counter:02d}_rtac_shared_lunar', y_lim=(-200, 250),
-                         x_lim=(10000, 300000), smoothing_factor=10, show=False)
+                         x_lim=(10000, 300000), smoothing_factor=50, show=False)
     img_counter += 1
     visualize_statistics({'RTAC Vanilla': rtac_vanilla_cart, 'RTAC + Shared Params': rtac_shared_cart},
                          save_dest=img_folder / f'{img_counter:02d}_rtac_shared_cart', y_lim=(-200, 600),
-                         x_lim=(10000, 100000), smoothing_factor=5, show=False)
+                         x_lim=(10000, 100000), smoothing_factor=20, show=False)
 
     return img_counter
 
@@ -172,15 +172,15 @@ def extensions_combinations(img_counter):
     img_counter += 1
     visualize_statistics({'SAC Vanilla': sac_vanilla, 'SAC + All': sac_all},
                          save_dest=img_folder / f'{img_counter:02d}_sac_all_lunar', y_lim=(-200, 250),
-                         x_lim=(10000, 300000), smoothing_factor=10, show=False)
+                         x_lim=(10000, 300000), smoothing_factor=50, show=False)
     img_counter += 1
     visualize_statistics({'SAC Vanilla RTMDP': sac_rtmdp_vanilla, 'SAC RTMDP + All': sac_rtmdp_all},
                          save_dest=img_folder / f'{img_counter:02d}_sac_rtmdp_all_lunar', y_lim=(-200, 250),
-                         x_lim=(10000, 300000), smoothing_factor=10, show=False)
+                         x_lim=(10000, 300000), smoothing_factor=50, show=False)
     img_counter += 1
     visualize_statistics({'RTAC Vanilla': rtac_vanilla, 'RTAC + All': rtac_all},
                          save_dest=img_folder / f'{img_counter:02d}_rtac_all_lunar', y_lim=(-200, 250),
-                         x_lim=(10000, 300000), smoothing_factor=10, show=False)
+                         x_lim=(10000, 300000), smoothing_factor=50, show=False)
 
     return img_counter
 
@@ -190,11 +190,11 @@ def extensions_combinations(img_counter):
 def main_presentation():
     # 1 plots of vanilla sac, rtac, sac in rtmdp
     img_counter = 0
-    # img_counter = vanilla_plots(img_counter)
+    img_counter = vanilla_plots(img_counter)
 
     # 2 Extensions Single
     img_counter = 3
-    # img_counter = extensions_single(img_counter)
+    img_counter = extensions_single(img_counter)
 
     # 3 Combinations of Extensions
     img_counter = 17

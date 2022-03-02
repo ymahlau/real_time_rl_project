@@ -28,12 +28,12 @@ def render_agent(agent: Union[SAC, RTAC]):
 
 
 def main():
-    # env = CustomLunarLander(step_size=1)
-    env = RTMDP(CustomLunarLander(step_size=0.5), 0)
-    network_kwargs = {'num_layers': 2, 'hidden_size': 256, 'double_value': False, 'normalized': False}
-    # agent = SAC(env, network_kwargs=network_kwargs, use_target=True, use_device=False)
-    agent = RTAC(env, network_kwargs=network_kwargs, use_target=False, use_device=False)
-    agent.load_network('../model_data/CustomLunarLander/RTAC-S5-T100-rtmdp')
+    env = CustomLunarLander(step_size=0.2)
+    # env = RTMDP(CustomLunarLander(step_size=0.5), 0)
+    network_kwargs = {'num_layers': 2, 'hidden_size': 512, 'double_value': False, 'normalized': False}
+    agent = SAC(env, network_kwargs=network_kwargs, use_target=False, use_device=False, entropy_scale=0.1)
+    # agent = RTAC(env, network_kwargs=network_kwargs, use_target=False, use_device=False)
+    agent.load_network('../model_data/CustomLunarLander/SAC-S51-T20')
     render_agent(agent)
 
 if __name__ == '__main__':
