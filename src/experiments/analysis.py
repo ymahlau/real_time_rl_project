@@ -26,12 +26,15 @@ def smooth(array: np.ndarray, smoothing_factor: int) -> np.ndarray:
 
 
 def visualize_statistics(
-        statistics: Dict[str, np.ndarray],
+        statistics: Union[Dict[str, np.ndarray], Dict[str, Tuple[np.ndarray, str]]],
         save_dest: Optional[Union[str, Path]] = None,
         x_lim: Optional[Tuple[float, float]] = None,
         y_lim: Optional[Tuple[float, float]] = None,
         smoothing_factor: int = 1,
         show: bool = True,
+        log: bool = False,
+        x_name: Optional[str] = None,
+        y_name: Optional[str] = None,
 ):
     """
     Plots given analysed experiment data (statistics) and saves the plotted data.
@@ -48,23 +51,39 @@ def visualize_statistics(
     # Setup plot
     plt.clf()
     plt.figure(figsize=(8, 8), dpi=200)
-    plt.xlabel("Steps")
-    plt.ylabel("Average return")
+    if x_name is not None:
+        plt.xlabel(x_name)
+    else:
+        plt.xlabel("Steps")
+
+    if y_name is not None:
+        plt.ylabel(y_name)
+    else:
+        plt.ylabel("Average return")
 
     # Fill plot with the given statistics
     for name, stats in statistics.items():
+        color = None
+        if isinstance(stats, tuple):
+            color = stats[1]
+            stats = stats[0]
+
         x = stats[:, 0]
         y = smooth(stats[:, 1], smoothing_factor=smoothing_factor)
         y_lower = smooth(stats[:, 2], smoothing_factor=smoothing_factor)
         y_upper = smooth(stats[:, 3], smoothing_factor=smoothing_factor)
 
-        plt.plot(x, y, label=name)
-        plt.fill_between(x, y_lower, y_upper, alpha=0.1)
+        plt.plot(x, y, label=name, color=color)
+        plt.fill_between(x, y_lower, y_upper, alpha=0.1, color=color)
 
     if x_lim is not None:
         plt.xlim(x_lim)
     if y_lim is not None:
         plt.ylim(y_lim)
+
+    if log:
+        ax = plt.gca()
+        ax.set_xscale('log')
 
     # Show and save plot
     plt.legend()

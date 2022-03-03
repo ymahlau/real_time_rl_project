@@ -2,6 +2,8 @@ import sys
 
 from src import main
 from src.envs.custom_lunar_lander import CustomLunarLander
+from src.utils.wrapper import PreviousActionWrapper
+
 
 def main_custom_lunar_lander(seed: int):
     iter_per_track = 10
@@ -29,6 +31,13 @@ def main_custom_lunar_lander(seed: int):
                              'CustomLunarLander', seed=seed, entropy_scale=entropy_scale, network_kwargs=network_kwargs,
                              lr=lr, steps=steps, iter_per_track=iter_per_track, track_rate=track_rate, use_device=True,
                              flags=f'-{step_size}')
+
+        # sac in PreviousAction(E)
+        main.experiment_sac(PreviousActionWrapper(CustomLunarLander(step_size=step_size), 0),
+                            PreviousActionWrapper(CustomLunarLander(step_size=step_size), 0),
+                            'CustomLunarLander', seed=seed, entropy_scale=entropy_scale, network_kwargs=network_kwargs,
+                            lr=lr, steps=steps, iter_per_track=iter_per_track, track_rate=track_rate, use_rtmdp=False,
+                            use_device=True, flags=f'-{step_size}-prev')
 
 
 if __name__ == '__main__':
