@@ -221,6 +221,7 @@ def experiment_step_size(img_counter: int):
     result_rtac = np.zeros(shape=(4, 5))
     result_sac = np.zeros(shape=(4, 5))
     result_sac_rtmdp = np.zeros(shape=(4, 5))
+    result_sac_prev = np.zeros(shape=(4, 5))
 
     for i, step_size in enumerate(step_sizes):
         stats_rtac = analyse_experiments([data_folder / 'CustomLunarLander' / f'RTAC-S{s}-T100-rtmdp-{step_size}'
@@ -229,10 +230,13 @@ def experiment_step_size(img_counter: int):
                                          for s in range(3)])
         stats_sac_rtmdp = analyse_experiments([data_folder / 'CustomLunarLander' / f'SAC-S{s}-T100-rtmdp-{step_size}'
                                                for s in range(3)])
+        stats_sac_prev = analyse_experiments([data_folder / 'CustomLunarLander' / f'SAC-S{s}-T100-{step_size}-prev'
+                                               for s in range(3)])
 
         regret_rtac = total_regret(stats_rtac, max_return=max_return)
         regret_sac = total_regret(stats_sac, max_return=max_return)
         regret_sac_rtmdp = total_regret(stats_sac_rtmdp, max_return=max_return)
+        stats_sac_prev = total_regret(stats_sac_prev, max_return=max_return)
 
         result_rtac[0, i] = step_size
         result_rtac[1, i] = regret_rtac[0]
@@ -249,9 +253,15 @@ def experiment_step_size(img_counter: int):
         result_sac_rtmdp[2, i] = regret_sac_rtmdp[1]
         result_sac_rtmdp[3, i] = regret_sac_rtmdp[2]
 
+        result_sac_prev[0, i] = step_size
+        result_sac_prev[1, i] = stats_sac_prev[0]
+        result_sac_prev[2, i] = stats_sac_prev[1]
+        result_sac_prev[3, i] = stats_sac_prev[2]
+
     img_counter += 1
     visualize_statistics({'RTAC': (result_rtac.T, rtac_color), 'SAC': (result_sac.T, sac_color),
-                          'SAC in RTMDP': (result_sac_rtmdp.T, sac_rtmdp_color)},
+                          'SAC in RTMDP': (result_sac_rtmdp.T, sac_rtmdp_color),
+                          'SAC with prev': (result_sac_prev.T, ext_color)},
                          save_dest=img_folder / f'{img_counter:02d}_step_sizes', log=True, y_name='Total Regret',
                          x_name='Step Size')
 
