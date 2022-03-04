@@ -75,7 +75,7 @@ class PolicyValueNetwork(nn.Module):
             normalized: bool = False,
             hidden_size: int = 256,
             num_layers: int = 2,
-            pop_art_factor: float = 0.0003,
+            pop_art_factor: float = 0.005,
             epsilon: float = 1e-6  # for numerical stability, not given in rtac-paper
     ):
         super().__init__()
@@ -125,8 +125,8 @@ class PolicyValueNetwork(nn.Module):
 
         # normalization parameter (updatable)
         self.norm_layer = nn.Linear(1, 1)
-        self.norm_layer.weight.data = torch.tensor([[1]]).float()
-        self.norm_layer.bias.data = torch.tensor([0]).float()
+        # self.norm_layer.weight.data = torch.tensor([[1]]).float()
+        # self.norm_layer.bias.data = torch.tensor([0]).float()
         self.scale: nn.Parameter = nn.Parameter(torch.tensor(1).float(), requires_grad=False)  # mu (mean)
         self.shift: nn.Parameter = nn.Parameter(torch.tensor(0).float(), requires_grad=False)  # sigma (std)
         self.second_moment: nn.Parameter = nn.Parameter(torch.tensor(1).float(), requires_grad=False)  # nu

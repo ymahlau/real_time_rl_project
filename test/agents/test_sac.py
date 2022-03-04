@@ -1,27 +1,27 @@
 import math
 import unittest
 
-import gym
 import torch
 
 from src.agents.sac import SAC
 from src.envs.probe_envs import ConstRewardEnv, PredictableRewardEnv, TwoActionsAndStepsEnv
 from src.utils.wrapper import RTMDP
 
+seed = 0
 
 class TestSAC(unittest.TestCase):
 
     def test_value_function_const_env(self):
         places = 3
         env = ConstRewardEnv()
-        sac = SAC(env, entropy_scale=0.2, lr=0.01, buffer_size=10, batch_size=5)
+        sac = SAC(env, entropy_scale=0.2, lr=0.01, buffer_size=10, batch_size=5, seed=seed, use_device=False)
         sac.train(num_steps=1000)
         self.assertAlmostEqual(1, sac.get_value(([0], 0)).item(), places=places)
 
     def test_value_function_predicable_env(self):
         places = 3
         env = PredictableRewardEnv()
-        sac = SAC(env, entropy_scale=0.2, lr=0.01, buffer_size=1, batch_size=1)
+        sac = SAC(env, entropy_scale=0.2, lr=0.01, buffer_size=1, batch_size=1, seed=seed, use_device=False)
         sac.train(num_steps=2000)
         self.assertAlmostEqual(1, sac.get_value(([1], 0)).item(), places=places)
         self.assertAlmostEqual(-1, sac.get_value(([-1], 0)).item(), places=places)
@@ -32,8 +32,9 @@ class TestSAC(unittest.TestCase):
         # Check if optimal policy can be adopted
         env = TwoActionsAndStepsEnv()
         eval_env = TwoActionsAndStepsEnv()
-        sac = SAC(env, eval_env=eval_env, entropy_scale=0.2, discount_factor=1, lr=0.01, buffer_size=100, batch_size=20)
-        sac.train(num_steps=10000)
+        sac = SAC(env, eval_env=eval_env, entropy_scale=0.2, discount_factor=1, lr=0.01, buffer_size=100, batch_size=20,
+                  seed=seed, use_device=False)
+        sac.train(num_steps=20000)
 
         avg = sac.evaluate()
         self.assertAlmostEqual(2, avg, delta=delta)
@@ -46,7 +47,8 @@ class TestSAC(unittest.TestCase):
         # Check if random policy is adopted when entropy is valued extremely highly
         env = TwoActionsAndStepsEnv()
         eval_env = TwoActionsAndStepsEnv()
-        sac = SAC(env, eval_env=eval_env, entropy_scale=10, discount_factor=1, lr=0.03, buffer_size=200, batch_size=16)
+        sac = SAC(env, eval_env=eval_env, entropy_scale=10, discount_factor=1, lr=0.03, buffer_size=200, batch_size=16,
+                  seed=seed, use_device=False)
         sac.train(num_steps=4000)
         avg = sac.evaluate()
 
@@ -57,7 +59,8 @@ class TestSAC(unittest.TestCase):
     def test_get_value(self):
         env = TwoActionsAndStepsEnv()
         initial_state = env.reset()
-        sac = SAC(env, entropy_scale=10, discount_factor=1, lr=0.03, buffer_size=200, batch_size=16)
+        sac = SAC(env, entropy_scale=10, discount_factor=1, lr=0.03, buffer_size=200, batch_size=16,
+                  seed=seed, use_device=False)
         value = sac.get_value((initial_state, 0))
         dist = sac.get_action_distribution(initial_state)
 
@@ -71,7 +74,7 @@ class TestSAC(unittest.TestCase):
         env = TwoActionsAndStepsEnv()
         eval_env = TwoActionsAndStepsEnv()
         sac = SAC(env, eval_env=eval_env, entropy_scale=0.2, discount_factor=1, lr=0.01, buffer_size=100, batch_size=20,
-                  use_target=True)
+                  use_target=True, seed=seed, use_device=False)
         sac.train(num_steps=4000)
 
         avg = sac.evaluate()
@@ -89,7 +92,7 @@ class TestSAC(unittest.TestCase):
         eval_env = TwoActionsAndStepsEnv()
         network_kwargs = {'double_value': True}
         sac = SAC(env, eval_env=eval_env, entropy_scale=0.2, discount_factor=1, lr=0.01, buffer_size=100, batch_size=20,
-                  network_kwargs=network_kwargs)
+                  network_kwargs=network_kwargs, seed=seed, use_device=False)
         sac.train(num_steps=10000)
 
         avg = sac.evaluate()
@@ -102,9 +105,10 @@ class TestSAC(unittest.TestCase):
     def test_normalization_simple(self):
         env = ConstRewardEnv()
         network_kwargs = {'normalized': True, 'pop_art_factor': 0.5}
-        sac = SAC(env, entropy_scale=1, lr=0.01, buffer_size=1, batch_size=1, network_kwargs=network_kwargs)
+        sac = SAC(env, entropy_scale=1, lr=0.01, buffer_size=1, batch_size=1, network_kwargs=network_kwargs, seed=seed,
+                  use_device=False)
 
-        sac.train(num_steps=5000)
+        sac.train(num_steps=10000)
         normalized_value = sac.get_value(([0], 0))
         unnormalized_value = sac.network.unnormalize(normalized_value)
         self.assertAlmostEqual(0, normalized_value.item(), delta=0.1)
@@ -117,7 +121,8 @@ class TestSAC(unittest.TestCase):
         delta = 0.2
         env = PredictableRewardEnv()
         network_kwargs = {'normalized': True, 'pop_art_factor': 0.1}
-        sac = SAC(env, entropy_scale=0.2, lr=0.01, buffer_size=100, batch_size=100, network_kwargs=network_kwargs)
+        sac = SAC(env, entropy_scale=0.2, lr=0.01, buffer_size=100, batch_size=100, network_kwargs=network_kwargs,
+                  seed=seed, use_device=False)
         sac.train(num_steps=5000)
 
         normalized_value_pos = sac.get_value(([1], 0))
@@ -136,9 +141,10 @@ class TestSAC(unittest.TestCase):
     def test_rtmdp_e(self):
         env = RTMDP(TwoActionsAndStepsEnv(), initial_action=0)
         eval_env = RTMDP(TwoActionsAndStepsEnv(), initial_action=0)
-        sac = SAC(env, eval_env=eval_env, entropy_scale=0.2, discount_factor=1, lr=0.01, buffer_size=100, batch_size=50)
+        sac = SAC(env, eval_env=eval_env, entropy_scale=0.2, discount_factor=1, lr=0.01, buffer_size=100, batch_size=50,
+                  seed=seed, use_device=False)
 
-        # only test if this throws errors, performance is inherently bad
+        # only test if this throws errors
         sac.train(num_steps=1000)
 
 

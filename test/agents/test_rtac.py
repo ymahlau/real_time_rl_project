@@ -5,6 +5,7 @@ from src.agents.rtac import RTAC
 from src.envs.probe_envs import ConstRewardEnv, PredictableRewardEnv, TwoActionsAndStepsEnv
 from src.utils.wrapper import RTMDP
 
+seed = 0
 
 class TestRTAC(unittest.TestCase):
 
@@ -12,14 +13,14 @@ class TestRTAC(unittest.TestCase):
         env = RTMDP(ConstRewardEnv(), 0)
         initial_state = env.reset()
 
-        rtac = RTAC(env, lr=0.01, buffer_size=10, batch_size=5)
+        rtac = RTAC(env, lr=0.01, buffer_size=10, batch_size=5, seed=seed, use_device=False)
         rtac.train(num_steps=1000)
         initial_state_approx = rtac.get_value(initial_state).item()
         self.assertAlmostEqual(1, initial_state_approx, places=5)
 
     def test_value_predictable_env(self):
         env = RTMDP(PredictableRewardEnv(), initial_action=0)
-        rtac = RTAC(env, lr=0.01, buffer_size=100, batch_size=10)
+        rtac = RTAC(env, lr=0.01, buffer_size=100, batch_size=10, seed=seed, use_device=False)
         rtac.train(num_steps=1000)
 
         pos_state_approx = rtac.get_value(([1], 0)).item()
@@ -32,8 +33,8 @@ class TestRTAC(unittest.TestCase):
         delta = 0.2
         env = RTMDP(TwoActionsAndStepsEnv(), initial_action=0)
         eval_env = RTMDP(TwoActionsAndStepsEnv(), initial_action=0)
-        rtac = RTAC(env, eval_env=eval_env, lr=0.01, buffer_size=100, batch_size=10)
-        rtac.train(num_steps=10000)
+        rtac = RTAC(env, eval_env=eval_env, lr=0.01, buffer_size=100, batch_size=50, seed=seed, use_device=False)
+        rtac.train(num_steps=20000)
         avg = rtac.evaluate()
 
         self.assertAlmostEqual(2, avg, delta=delta)
@@ -47,7 +48,8 @@ class TestRTAC(unittest.TestCase):
         # Check if random policy is adopted when entropy is valued extremely highly
         env = RTMDP(TwoActionsAndStepsEnv(), initial_action=0)
         eval_env = RTMDP(TwoActionsAndStepsEnv(), initial_action=0)
-        rtac = RTAC(env, eval_env=eval_env, lr=0.01, buffer_size=100, batch_size=10, entropy_scale=100)
+        rtac = RTAC(env, eval_env=eval_env, lr=0.01, buffer_size=100, batch_size=10, entropy_scale=100, seed=seed,
+                    use_device=False)
         rtac.train(num_steps=4000)
         avg = rtac.evaluate()
 
@@ -58,7 +60,8 @@ class TestRTAC(unittest.TestCase):
     def test_normalization_simple(self):
         env = RTMDP(ConstRewardEnv(), initial_action=0)
         network_kwargs = {'normalized': True, 'pop_art_factor': 0.5}
-        rtac = RTAC(env, entropy_scale=1, lr=0.01, buffer_size=1, batch_size=1, network_kwargs=network_kwargs)
+        rtac = RTAC(env, entropy_scale=1, lr=0.01, buffer_size=1, batch_size=1, network_kwargs=network_kwargs,
+                    seed=seed, use_device=False)
 
         rtac.train(num_steps=5000)
         normalized_value = rtac.get_value(([0], 0))
@@ -73,7 +76,8 @@ class TestRTAC(unittest.TestCase):
         delta = 0.2
         env = RTMDP(PredictableRewardEnv(), initial_action=0)
         network_kwargs = {'normalized': True, 'pop_art_factor': 0.1}
-        rtac = RTAC(env, entropy_scale=0.2, lr=0.01, buffer_size=100, batch_size=100, network_kwargs=network_kwargs)
+        rtac = RTAC(env, entropy_scale=0.2, lr=0.01, buffer_size=100, batch_size=100, network_kwargs=network_kwargs,
+                    seed=seed, use_device=False)
         rtac.train(num_steps=10000)
 
         normalized_value_pos = rtac.get_value(([1], 0))
@@ -93,7 +97,7 @@ class TestRTAC(unittest.TestCase):
         env = RTMDP(ConstRewardEnv(), 0)
         initial_state = env.reset()
 
-        rtac = RTAC(env, lr=0.01, buffer_size=10, batch_size=5, use_device=True)
+        rtac = RTAC(env, lr=0.01, buffer_size=10, batch_size=5, use_device=True, seed=seed)
         rtac.train(num_steps=1000)
         initial_state_approx = rtac.get_value(initial_state).item()
         self.assertAlmostEqual(1, initial_state_approx, places=5)

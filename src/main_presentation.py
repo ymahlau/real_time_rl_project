@@ -14,6 +14,7 @@ sac_color = 'blue'
 sac_rtmdp_color = 'green'
 ext_color = 'black'
 
+
 def vanilla_plots(img_counter: int):
     img_counter += 1
     sac_names = [f'SAC-S{seed}-T200' for seed in range(5)]
@@ -75,17 +76,20 @@ def extensions_single(img_counter):
                          save_dest=img_folder / f'{img_counter:02d}_sac_rtmdp_target_lunar', y_lim=(-200, 250),
                          x_lim=(10000, 300000), smoothing_factor=50, show=False)
     img_counter += 1
-    visualize_statistics({'RTAC Vanilla': (rtac_vanilla_lunar, rtac_color), 'RTAC + Target': (rtac_target_lunar, ext_color)},
-                         save_dest=img_folder / f'{img_counter:02d}_rtac_target_lunar', y_lim=(-200, 250),
-                         x_lim=(10000, 300000), smoothing_factor=50, show=False)
+    visualize_statistics(
+        {'RTAC Vanilla': (rtac_vanilla_lunar, rtac_color), 'RTAC + Target': (rtac_target_lunar, ext_color)},
+        save_dest=img_folder / f'{img_counter:02d}_rtac_target_lunar', y_lim=(-200, 250),
+        x_lim=(10000, 300000), smoothing_factor=50, show=False)
     img_counter += 1
-    visualize_statistics({'SAC RTMDP Vanilla': (sac_vanilla_cart, sac_rtmdp_color), 'SAC RTMDP + Target': (sac_target_cart, ext_color)},
-                         save_dest=img_folder / f'{img_counter:02d}_sac_rtmdp_target_cart', y_lim=(-200, 600),
-                         x_lim=(10000, 100000), smoothing_factor=20, show=False)
+    visualize_statistics(
+        {'SAC RTMDP Vanilla': (sac_vanilla_cart, sac_rtmdp_color), 'SAC RTMDP + Target': (sac_target_cart, ext_color)},
+        save_dest=img_folder / f'{img_counter:02d}_sac_rtmdp_target_cart', y_lim=(-200, 600),
+        x_lim=(10000, 100000), smoothing_factor=20, show=False)
     img_counter += 1
-    visualize_statistics({'RTAC Vanilla': (rtac_vanilla_cart, rtac_color), 'RTAC + Target': (rtac_target_cart, ext_color)},
-                         save_dest=img_folder / f'{img_counter:02d}_rtac_target_cart', y_lim=(-200, 600),
-                         x_lim=(10000, 100000), smoothing_factor=20, show=False)
+    visualize_statistics(
+        {'RTAC Vanilla': (rtac_vanilla_cart, rtac_color), 'RTAC + Target': (rtac_target_cart, ext_color)},
+        save_dest=img_folder / f'{img_counter:02d}_rtac_target_cart', y_lim=(-200, 600),
+        x_lim=(10000, 100000), smoothing_factor=20, show=False)
 
     # double value data
     sac_double_lunar = analyse_experiments([data_folder / 'LunarLander' / f'SAC-S{s}-T600-double-rtmdp'
@@ -99,21 +103,25 @@ def extensions_single(img_counter):
 
     # double value plots
     img_counter += 1
-    visualize_statistics({'SAC RTMDP Vanilla': (sac_vanilla_lunar, sac_rtmdp_color), 'SAC RTMDP + Double Value': (sac_double_lunar, ext_color)},
+    visualize_statistics({'SAC RTMDP Vanilla': (sac_vanilla_lunar, sac_rtmdp_color),
+                          'SAC RTMDP + Double Value': (sac_double_lunar, ext_color)},
                          save_dest=img_folder / f'{img_counter:02d}_sac_rtmdp_double_lunar', y_lim=(-200, 250),
                          x_lim=(10000, 300000), smoothing_factor=50, show=False)
     img_counter += 1
-    visualize_statistics({'RTAC Vanilla': (rtac_vanilla_lunar, rtac_color), 'RTAC + Double Value': (rtac_double_lunar, ext_color)},
-                         save_dest=img_folder / f'{img_counter:02d}_rtac_double_lunar', y_lim=(-200, 250),
-                         x_lim=(10000, 300000), smoothing_factor=50, show=False)
+    visualize_statistics(
+        {'RTAC Vanilla': (rtac_vanilla_lunar, rtac_color), 'RTAC + Double Value': (rtac_double_lunar, ext_color)},
+        save_dest=img_folder / f'{img_counter:02d}_rtac_double_lunar', y_lim=(-200, 250),
+        x_lim=(10000, 300000), smoothing_factor=50, show=False)
     img_counter += 1
-    visualize_statistics({'SAC RTMDP Vanilla': (sac_vanilla_cart, sac_rtmdp_color), 'SAC RTMDP + Double Value': (sac_double_cart, ext_color)},
+    visualize_statistics({'SAC RTMDP Vanilla': (sac_vanilla_cart, sac_rtmdp_color),
+                          'SAC RTMDP + Double Value': (sac_double_cart, ext_color)},
                          save_dest=img_folder / f'{img_counter:02d}_sac_rtmdp_double_cart', y_lim=(-200, 600),
                          x_lim=(10000, 100000), smoothing_factor=20, show=False)
     img_counter += 1
-    visualize_statistics({'RTAC Vanilla': (rtac_vanilla_cart, rtac_color), 'RTAC + Double Value': (rtac_double_cart, ext_color)},
-                         save_dest=img_folder / f'{img_counter:02d}_rtac_double_cart', y_lim=(-200, 600),
-                         x_lim=(10000, 100000), smoothing_factor=20, show=False)
+    visualize_statistics(
+        {'RTAC Vanilla': (rtac_vanilla_cart, rtac_color), 'RTAC + Double Value': (rtac_double_cart, ext_color)},
+        save_dest=img_folder / f'{img_counter:02d}_rtac_double_cart', y_lim=(-200, 600),
+        x_lim=(10000, 100000), smoothing_factor=20, show=False)
 
     # normalization data
     sac_norm_lunar = analyse_experiments([data_folder / 'LunarLander' / f'SAC-S{s}-T600-norm-rtmdp'
@@ -127,17 +135,20 @@ def extensions_single(img_counter):
 
     # normalization plots
     img_counter += 1
-    visualize_statistics({'SAC RTMDP Vanilla': (sac_vanilla_lunar, sac_rtmdp_color), 'SAC RTMDP + Norm': (sac_norm_lunar, ext_color)},
-                         save_dest=img_folder / f'{img_counter:02d}_sac_rtmdp_norm_lunar', y_lim=(-200, 250),
-                         x_lim=(10000, 300000), smoothing_factor=50, show=False)
+    visualize_statistics(
+        {'SAC RTMDP Vanilla': (sac_vanilla_lunar, sac_rtmdp_color), 'SAC RTMDP + Norm': (sac_norm_lunar, ext_color)},
+        save_dest=img_folder / f'{img_counter:02d}_sac_rtmdp_norm_lunar', y_lim=(-200, 250),
+        x_lim=(10000, 300000), smoothing_factor=50, show=False)
     img_counter += 1
-    visualize_statistics({'RTAC Vanilla': (rtac_vanilla_lunar, rtac_color), 'RTAC + Norm': (rtac_norm_lunar, ext_color)},
-                         save_dest=img_folder / f'{img_counter:02d}_rtac_norm_lunar', y_lim=(-200, 250),
-                         x_lim=(10000, 300000), smoothing_factor=50, show=False)
+    visualize_statistics(
+        {'RTAC Vanilla': (rtac_vanilla_lunar, rtac_color), 'RTAC + Norm': (rtac_norm_lunar, ext_color)},
+        save_dest=img_folder / f'{img_counter:02d}_rtac_norm_lunar', y_lim=(-200, 250),
+        x_lim=(10000, 300000), smoothing_factor=50, show=False)
     img_counter += 1
-    visualize_statistics({'SAC RTMDP Vanilla': (sac_vanilla_cart, sac_rtmdp_color), 'SAC RTMDP + Norm': (sac_norm_cart, ext_color)},
-                         save_dest=img_folder / f'{img_counter:02d}_sac_rtmdp_norm_cart', y_lim=(-200, 600),
-                         x_lim=(10000, 100000), smoothing_factor=20, show=False)
+    visualize_statistics(
+        {'SAC RTMDP Vanilla': (sac_vanilla_cart, sac_rtmdp_color), 'SAC RTMDP + Norm': (sac_norm_cart, ext_color)},
+        save_dest=img_folder / f'{img_counter:02d}_sac_rtmdp_norm_cart', y_lim=(-200, 600),
+        x_lim=(10000, 100000), smoothing_factor=20, show=False)
     img_counter += 1
     visualize_statistics({'RTAC Vanilla': (rtac_vanilla_cart, rtac_color), 'RTAC + Norm': (rtac_norm_cart, ext_color)},
                          save_dest=img_folder / f'{img_counter:02d}_rtac_norm_cart', y_lim=(-200, 600),
@@ -151,43 +162,15 @@ def extensions_single(img_counter):
 
     # shared plots
     img_counter += 1
-    visualize_statistics({'RTAC Vanilla': (rtac_vanilla_lunar, rtac_color), 'RTAC + Shared Params': (rtac_shared_lunar, ext_color)},
-                         save_dest=img_folder / f'{img_counter:02d}_rtac_shared_lunar', y_lim=(-200, 250),
-                         x_lim=(10000, 300000), smoothing_factor=50, show=False)
+    visualize_statistics(
+        {'RTAC Vanilla': (rtac_vanilla_lunar, rtac_color), 'RTAC + Shared Params': (rtac_shared_lunar, ext_color)},
+        save_dest=img_folder / f'{img_counter:02d}_rtac_shared_lunar', y_lim=(-200, 250),
+        x_lim=(10000, 300000), smoothing_factor=50, show=False)
     img_counter += 1
-    visualize_statistics({'RTAC Vanilla': (rtac_vanilla_cart, rtac_color), 'RTAC + Shared Params': (rtac_shared_cart, ext_color)},
-                         save_dest=img_folder / f'{img_counter:02d}_rtac_shared_cart', y_lim=(-200, 600),
-                         x_lim=(10000, 100000), smoothing_factor=20, show=False)
-
-    return img_counter
-
-
-def extensions_combinations(img_counter):
-    # vanilla stats
-    sac_rtmdp_vanilla = analyse_experiments([data_folder / 'LunarLander' / f'SAC-S{s}-T600-rtmdp' for s in range(5)])
-    sac_vanilla = analyse_experiments([data_folder / 'LunarLander' / f'SAC-S{s}-T600' for s in range(5)])
-    rtac_vanilla = analyse_experiments([data_folder / 'LunarLander' / f'RTAC-S{s}-T600-rtmdp' for s in range(5)])
-
-    # combination stats
-    sac_rtmdp_all = analyse_experiments([data_folder / 'LunarLander' / f'SAC-S{s}-T600-target-double-norm-rtmdp'
-                                         for s in range(5)])
-    sac_all = analyse_experiments([data_folder / 'LunarLander' / f'SAC-S{s}-T600-target-double-norm' for s in range(5)])
-    rtac_all = analyse_experiments([data_folder / 'LunarLander' / f'RTAC-S{s}-T600-target-double-norm-shared-rtmdp'
-                                    for s in range(5)])
-
-    # plots
-    img_counter += 1
-    visualize_statistics({'SAC Vanilla': (sac_vanilla, sac_color), 'SAC + All': (sac_all, ext_color)},
-                         save_dest=img_folder / f'{img_counter:02d}_sac_all_lunar', y_lim=(-200, 250),
-                         x_lim=(10000, 300000), smoothing_factor=50, show=False)
-    img_counter += 1
-    visualize_statistics({'SAC Vanilla RTMDP': (sac_rtmdp_vanilla, sac_rtmdp_color), 'SAC RTMDP + All': (sac_rtmdp_all, ext_color)},
-                         save_dest=img_folder / f'{img_counter:02d}_sac_rtmdp_all_lunar', y_lim=(-200, 250),
-                         x_lim=(10000, 300000), smoothing_factor=50, show=False)
-    img_counter += 1
-    visualize_statistics({'RTAC Vanilla': (rtac_vanilla, rtac_color), 'RTAC + All': (rtac_all, ext_color)},
-                         save_dest=img_folder / f'{img_counter:02d}_rtac_all_lunar', y_lim=(-200, 250),
-                         x_lim=(10000, 300000), smoothing_factor=50, show=False)
+    visualize_statistics(
+        {'RTAC Vanilla': (rtac_vanilla_cart, rtac_color), 'RTAC + Shared Params': (rtac_shared_cart, ext_color)},
+        save_dest=img_folder / f'{img_counter:02d}_rtac_shared_cart', y_lim=(-200, 600),
+        x_lim=(10000, 100000), smoothing_factor=20, show=False)
 
     return img_counter
 
@@ -203,14 +186,16 @@ def shared_norm(img_counter: int):
                                           for s in range(5)])
 
     img_counter += 1
-    visualize_statistics({'RTAC Vanilla': (rtac_vanilla_lunar, rtac_color), 'RTAC Norm + Shared': (rtac_comb_lunar, ext_color)},
-                         save_dest=img_folder / f'{img_counter:02d}_rtac_norm_shared_lunar', y_lim=(-200, 250),
-                         x_lim=(10000, 300000), smoothing_factor=1, show=False)
+    visualize_statistics(
+        {'RTAC Vanilla': (rtac_vanilla_lunar, rtac_color), 'RTAC Norm + Shared': (rtac_comb_lunar, ext_color)},
+        save_dest=img_folder / f'{img_counter:02d}_rtac_norm_shared_lunar', y_lim=(-200, 250),
+        x_lim=(10000, 300000), smoothing_factor=50, show=False)
 
     img_counter += 1
-    visualize_statistics({'RTAC Vanilla': (rtac_vanilla_cart, rtac_color), 'RTAC Norm + Shared': (rtac_comb_cart, ext_color)},
-                         save_dest=img_folder / f'{img_counter:02d}_rtac_norm_shared_cart', y_lim=(-200, 600),
-                         x_lim=(10000, 100000), smoothing_factor=1, show=False)
+    visualize_statistics(
+        {'RTAC Vanilla': (rtac_vanilla_cart, rtac_color), 'RTAC Norm + Shared': (rtac_comb_cart, ext_color)},
+        save_dest=img_folder / f'{img_counter:02d}_rtac_norm_shared_cart', y_lim=(-200, 600),
+        x_lim=(10000, 100000), smoothing_factor=20, show=False)
 
     return img_counter
 
@@ -231,7 +216,7 @@ def experiment_step_size(img_counter: int):
         stats_sac_rtmdp = analyse_experiments([data_folder / 'CustomLunarLander' / f'SAC-S{s}-T100-rtmdp-{step_size}'
                                                for s in range(3)])
         stats_sac_prev = analyse_experiments([data_folder / 'CustomLunarLander' / f'SAC-S{s}-T100-{step_size}-prev'
-                                               for s in range(3)])
+                                              for s in range(3)])
 
         regret_rtac = total_regret(stats_rtac, max_return=max_return)
         regret_sac = total_regret(stats_sac, max_return=max_return)
@@ -263,13 +248,9 @@ def experiment_step_size(img_counter: int):
                           'SAC in RTMDP': (result_sac_rtmdp.T, sac_rtmdp_color),
                           'SAC with prev': (result_sac_prev.T, ext_color)},
                          save_dest=img_folder / f'{img_counter:02d}_step_sizes', log=True, y_name='Total Regret',
-                         x_name='Step Size')
+                         x_name='Step Size', show=False)
 
     return img_counter
-
-
-
-
 
 
 def main_presentation():
@@ -278,18 +259,12 @@ def main_presentation():
     img_counter = vanilla_plots(img_counter)
 
     # 2 Extensions Single
-    img_counter = 3
     img_counter = extensions_single(img_counter)
 
-    # 3 Combinations of Extensions
-    img_counter = 17
-    img_counter = extensions_combinations(img_counter)
-
     # 3 Norm + Shared
-    img_counter = 20
     img_counter = shared_norm(img_counter)
 
-    img_counter = 22
+    # 4 step size experiment
     img_counter = experiment_step_size(img_counter)
 
 
