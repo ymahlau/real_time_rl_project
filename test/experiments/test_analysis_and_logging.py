@@ -3,7 +3,7 @@ import unittest
 from pathlib import Path
 
 from src.agents.sac import SAC
-from src.envs.probe_envs import TwoActionsTwoStates
+from src.envs.probe_envs import TwoActionsAndStepsEnv
 from src.experiments.analysis import analyse_experiments, visualize_statistics
 from src.experiments.logging import perform_experiment
 
@@ -16,8 +16,8 @@ plot_folder.mkdir(parents=True, exist_ok=True)  # create folder if not existing
 class TestAnalysis(unittest.TestCase):
     def test_plotting_single(self):
         # log data
-        env = TwoActionsTwoStates()
-        eval_env = TwoActionsTwoStates()
+        env = TwoActionsAndStepsEnv()
+        eval_env = TwoActionsAndStepsEnv()
         agent = SAC(env, eval_env=eval_env, lr=0.01, buffer_size=100, batch_size=50, entropy_scale=0.2)
 
         file_name = 'sac_e'
@@ -33,8 +33,8 @@ class TestAnalysis(unittest.TestCase):
     def test_plotting_multiple_seed(self):
         # log data
         for seed in range(5):
-            env = TwoActionsTwoStates()
-            eval_env = TwoActionsTwoStates()
+            env = TwoActionsAndStepsEnv()
+            eval_env = TwoActionsAndStepsEnv()
             agent = SAC(env, eval_env=eval_env, seed=seed, lr=0.01, buffer_size=100, batch_size=50, entropy_scale=0.2)
 
             file_name = f'sac_e_{seed}'

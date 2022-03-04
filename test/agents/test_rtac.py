@@ -2,7 +2,7 @@ import math
 import unittest
 
 from src.agents.rtac import RTAC
-from src.envs.probe_envs import ConstRewardEnv, PredictableRewardEnv, TwoActionsTwoStates
+from src.envs.probe_envs import ConstRewardEnv, PredictableRewardEnv, TwoActionsAndStepsEnv
 from src.utils.wrapper import RTMDP
 
 
@@ -30,8 +30,8 @@ class TestRTAC(unittest.TestCase):
 
     def test_policy_two_states_two_actions(self):
         delta = 0.2
-        env = RTMDP(TwoActionsTwoStates(), initial_action=0)
-        eval_env = RTMDP(TwoActionsTwoStates(), initial_action=0)
+        env = RTMDP(TwoActionsAndStepsEnv(), initial_action=0)
+        eval_env = RTMDP(TwoActionsAndStepsEnv(), initial_action=0)
         rtac = RTAC(env, eval_env=eval_env, lr=0.01, buffer_size=100, batch_size=10)
         rtac.train(num_steps=10000)
         avg = rtac.evaluate()
@@ -45,8 +45,8 @@ class TestRTAC(unittest.TestCase):
 
     def test_policy(self):
         # Check if random policy is adopted when entropy is valued extremely highly
-        env = RTMDP(TwoActionsTwoStates(), initial_action=0)
-        eval_env = RTMDP(TwoActionsTwoStates(), initial_action=0)
+        env = RTMDP(TwoActionsAndStepsEnv(), initial_action=0)
+        eval_env = RTMDP(TwoActionsAndStepsEnv(), initial_action=0)
         rtac = RTAC(env, eval_env=eval_env, lr=0.01, buffer_size=100, batch_size=10, entropy_scale=100)
         rtac.train(num_steps=4000)
         avg = rtac.evaluate()

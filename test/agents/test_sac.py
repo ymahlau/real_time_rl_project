@@ -5,7 +5,7 @@ import gym
 import torch
 
 from src.agents.sac import SAC
-from src.envs.probe_envs import ConstRewardEnv, PredictableRewardEnv, TwoActionsTwoStates
+from src.envs.probe_envs import ConstRewardEnv, PredictableRewardEnv, TwoActionsAndStepsEnv
 from src.utils.wrapper import RTMDP
 
 
@@ -30,8 +30,8 @@ class TestSAC(unittest.TestCase):
         delta = 0.2
 
         # Check if optimal policy can be adopted
-        env = TwoActionsTwoStates()
-        eval_env = TwoActionsTwoStates()
+        env = TwoActionsAndStepsEnv()
+        eval_env = TwoActionsAndStepsEnv()
         sac = SAC(env, eval_env=eval_env, entropy_scale=0.2, discount_factor=1, lr=0.01, buffer_size=100, batch_size=20)
         sac.train(num_steps=10000)
 
@@ -44,8 +44,8 @@ class TestSAC(unittest.TestCase):
 
     def test_entropy(self):
         # Check if random policy is adopted when entropy is valued extremely highly
-        env = TwoActionsTwoStates()
-        eval_env = TwoActionsTwoStates()
+        env = TwoActionsAndStepsEnv()
+        eval_env = TwoActionsAndStepsEnv()
         sac = SAC(env, eval_env=eval_env, entropy_scale=10, discount_factor=1, lr=0.03, buffer_size=200, batch_size=16)
         sac.train(num_steps=4000)
         avg = sac.evaluate()
@@ -55,7 +55,7 @@ class TestSAC(unittest.TestCase):
         self.assertAlmostEqual(1 * 10 * math.log(2, math.e), sac.get_value(([3], 1)).item(), delta=10)
 
     def test_get_value(self):
-        env = TwoActionsTwoStates()
+        env = TwoActionsAndStepsEnv()
         initial_state = env.reset()
         sac = SAC(env, entropy_scale=10, discount_factor=1, lr=0.03, buffer_size=200, batch_size=16)
         value = sac.get_value((initial_state, 0))
@@ -68,8 +68,8 @@ class TestSAC(unittest.TestCase):
         delta = 0.1
 
         # Check if optimal policy can be adopted
-        env = TwoActionsTwoStates()
-        eval_env = TwoActionsTwoStates()
+        env = TwoActionsAndStepsEnv()
+        eval_env = TwoActionsAndStepsEnv()
         sac = SAC(env, eval_env=eval_env, entropy_scale=0.2, discount_factor=1, lr=0.01, buffer_size=100, batch_size=20,
                   use_target=True)
         sac.train(num_steps=4000)
@@ -85,8 +85,8 @@ class TestSAC(unittest.TestCase):
         delta = 0.1
 
         # Check if optimal policy can be adopted
-        env = TwoActionsTwoStates()
-        eval_env = TwoActionsTwoStates()
+        env = TwoActionsAndStepsEnv()
+        eval_env = TwoActionsAndStepsEnv()
         network_kwargs = {'double_value': True}
         sac = SAC(env, eval_env=eval_env, entropy_scale=0.2, discount_factor=1, lr=0.01, buffer_size=100, batch_size=20,
                   network_kwargs=network_kwargs)
@@ -134,8 +134,8 @@ class TestSAC(unittest.TestCase):
         self.assertAlmostEqual(0, sac.network.shift.data.item(), delta=delta)
 
     def test_rtmdp_e(self):
-        env = RTMDP(TwoActionsTwoStates(), initial_action=0)
-        eval_env = RTMDP(TwoActionsTwoStates(), initial_action=0)
+        env = RTMDP(TwoActionsAndStepsEnv(), initial_action=0)
+        eval_env = RTMDP(TwoActionsAndStepsEnv(), initial_action=0)
         sac = SAC(env, eval_env=eval_env, entropy_scale=0.2, discount_factor=1, lr=0.01, buffer_size=100, batch_size=50)
 
         # only test if this throws errors, performance is inherently bad
