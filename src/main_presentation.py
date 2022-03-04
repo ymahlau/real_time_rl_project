@@ -201,12 +201,12 @@ def shared_norm(img_counter: int):
 
 
 def experiment_step_size(img_counter: int):
-    step_sizes = [0.01, 0.03, 0.1, 0.3, 1]
+    step_sizes = [0.03, 0.1, 0.3, 1]
     max_return = 200
-    result_rtac = np.zeros(shape=(4, 5))
-    result_sac = np.zeros(shape=(4, 5))
-    result_sac_rtmdp = np.zeros(shape=(4, 5))
-    result_sac_prev = np.zeros(shape=(4, 5))
+    result_rtac = np.zeros(shape=(4, len(step_sizes)))
+    result_sac = np.zeros(shape=(4, len(step_sizes)))
+    result_sac_rtmdp = np.zeros(shape=(4, len(step_sizes)))
+    result_sac_prev = np.zeros(shape=(4, len(step_sizes)))
 
     for i, step_size in enumerate(step_sizes):
         stats_rtac = analyse_experiments([data_folder / 'CustomLunarLander' / f'RTAC-S{s}-T100-rtmdp-{step_size}'
