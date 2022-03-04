@@ -1,6 +1,6 @@
 import sys
 
-from src import main
+from src import experiment_sac, experiment_rtac
 from src.envs.custom_lunar_lander import CustomLunarLander
 from src.utils.wrapper import PreviousActionWrapper
 
@@ -15,25 +15,24 @@ def main_custom_lunar_lander(seed: int):
 
     for step_size in step_sizes:
         entropy_scale = step_size / 20
-
         # sac in E
-        main.experiment_sac(CustomLunarLander(step_size=step_size), CustomLunarLander(step_size=step_size),
+        experiment_sac(CustomLunarLander(step_size=step_size), CustomLunarLander(step_size=step_size),
                             'CustomLunarLander', seed=seed, entropy_scale=entropy_scale, network_kwargs=network_kwargs,
                             lr=lr, steps=steps, iter_per_track=iter_per_track, track_rate=track_rate,
                             use_device=True, flags=f'-{step_size}')
         # sac in RTMDP(E)
-        main.experiment_sac(CustomLunarLander(step_size=step_size), CustomLunarLander(step_size=step_size),
+        experiment_sac(CustomLunarLander(step_size=step_size), CustomLunarLander(step_size=step_size),
                             'CustomLunarLander', seed=seed, entropy_scale=entropy_scale, network_kwargs=network_kwargs,
                             lr=lr, steps=steps, iter_per_track=iter_per_track, track_rate=track_rate, use_rtmdp=True,
                             use_device=True, flags=f'-{step_size}')
         # RTAC
-        main.experiment_rtac(CustomLunarLander(step_size=step_size), CustomLunarLander(step_size=step_size),
+        experiment_rtac(CustomLunarLander(step_size=step_size), CustomLunarLander(step_size=step_size),
                              'CustomLunarLander', seed=seed, entropy_scale=entropy_scale, network_kwargs=network_kwargs,
                              lr=lr, steps=steps, iter_per_track=iter_per_track, track_rate=track_rate, use_device=True,
                              flags=f'-{step_size}')
 
         # sac in PreviousAction(E)
-        main.experiment_sac(PreviousActionWrapper(CustomLunarLander(step_size=step_size), 0),
+        experiment_sac(PreviousActionWrapper(CustomLunarLander(step_size=step_size), 0),
                             PreviousActionWrapper(CustomLunarLander(step_size=step_size), 0),
                             'CustomLunarLander', seed=seed, entropy_scale=entropy_scale, network_kwargs=network_kwargs,
                             lr=lr, steps=steps, iter_per_track=iter_per_track, track_rate=track_rate, use_rtmdp=False,

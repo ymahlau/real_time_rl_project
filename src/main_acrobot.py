@@ -2,7 +2,7 @@ import sys
 
 import gym
 
-from src.main import experiment_sac, experiment_rtac
+from src import experiment_sac, experiment_rtac
 
 
 def main(seed: int = 0):
